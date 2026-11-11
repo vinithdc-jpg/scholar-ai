@@ -10,12 +10,18 @@ export async function GET(request: Request) {
   try {
     const pool = getDatabasePool();
     const [users, scholarships, documents, jobs] = await Promise.all([
-      pool.query("SELECT role, COUNT(*)::int AS count FROM users GROUP BY role"),
-      pool.query("SELECT status, COUNT(*)::int AS count FROM scholarships GROUP BY status"),
+      pool.query(
+        "SELECT role, COUNT(*)::int AS count FROM users GROUP BY role",
+      ),
+      pool.query(
+        "SELECT status, COUNT(*)::int AS count FROM scholarships GROUP BY status",
+      ),
       pool.query(
         "SELECT processing_status AS status, COUNT(*)::int AS count FROM scholarship_documents GROUP BY processing_status",
       ),
-      pool.query("SELECT status, COUNT(*)::int AS count FROM ingestion_jobs GROUP BY status"),
+      pool.query(
+        "SELECT status, COUNT(*)::int AS count FROM ingestion_jobs GROUP BY status",
+      ),
     ]);
     return NextResponse.json({
       dashboard: {

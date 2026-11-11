@@ -153,54 +153,54 @@ export default function AuthPanel() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 py-12 text-slate-100">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/30 md:grid-cols-2">
-        <section className="flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-violet-700 to-slate-900 p-8 sm:p-12">
+    <main className="flex min-h-screen items-center justify-center bg-[#f8fafc] px-4 py-8 text-[#0f172a] sm:px-5 sm:py-12">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:grid-cols-2">
+        <section className="flex flex-col justify-between bg-gradient-to-br from-[#0f172a] via-[#172b35] to-[#064e3b] p-8 text-white sm:p-12">
           <Link href="/" className="text-xl font-semibold tracking-tight">
-            Scholar AI
+            Scholar<span className="text-emerald-300">AI</span>
           </Link>
           <div className="my-12">
-            <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-indigo-200">
+            <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-emerald-300">
               Your learning, in focus
             </p>
             <h1 className="max-w-md text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
               Make space for your next big idea.
             </h1>
-            <p className="mt-5 max-w-md leading-7 text-indigo-100/80">
+            <p className="mt-5 max-w-md leading-7 text-slate-300">
               Sign in to continue to your Scholar AI account.
             </p>
           </div>
-          <p className="text-sm text-indigo-100/60">
+          <p className="text-sm text-slate-400">
             A smarter place to study and grow.
           </p>
         </section>
 
         <section className="flex items-center justify-center p-8 sm:p-12">
           {isCheckingAuth ? (
-            <p className="text-sm text-slate-400" role="status">
+            <p className="text-sm text-slate-500" role="status">
               Checking your sign-in…
             </p>
           ) : user ? (
             <div className="w-full max-w-sm">
-              <p className="text-sm font-medium text-indigo-300">
+              <p className="text-sm font-medium text-emerald-700">
                 Account connected
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight">
                 Welcome{user.displayName ? `, ${user.displayName}` : " back"}
               </h2>
-              <p className="mt-3 break-all text-slate-400">{user.email}</p>
+              <p className="mt-3 break-all text-slate-500">{user.email}</p>
               {isSyncingProfile && (
-                <p className="mt-4 text-sm text-slate-400" role="status">
+                <p className="mt-4 text-sm text-slate-500" role="status">
                   Saving your profile…
                 </p>
               )}
               {profileSaved && !isSyncingProfile && (
-                <p className="mt-4 text-sm text-emerald-300">
+                <p className="mt-4 text-sm text-emerald-700">
                   Your profile is saved.
                 </p>
               )}
               {errorMessage && (
-                <p className="mt-5 text-sm text-rose-300" role="alert">
+                <p className="mt-5 text-sm text-rose-600" role="alert">
                   {errorMessage}
                 </p>
               )}
@@ -208,7 +208,7 @@ export default function AuthPanel() {
                 <button
                   type="button"
                   onClick={handleProfileSync}
-                  className="mt-5 text-sm font-medium text-indigo-300 hover:text-indigo-200"
+                  className="mt-5 text-sm font-medium text-emerald-700 hover:text-emerald-800"
                 >
                   Retry saving profile
                 </button>
@@ -217,7 +217,7 @@ export default function AuthPanel() {
                 type="button"
                 onClick={handleSignOut}
                 disabled={isSubmitting}
-                className="mt-8 w-full rounded-xl bg-white px-4 py-3 font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-8 w-full rounded-xl bg-[#059669] px-4 py-3 font-semibold text-white transition hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Signing out…" : "Sign out"}
               </button>
@@ -227,7 +227,7 @@ export default function AuthPanel() {
               <h2 className="text-3xl font-semibold tracking-tight">
                 {mode === "sign-in" ? "Welcome back" : "Create your account"}
               </h2>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-slate-500">
                 {mode === "sign-in"
                   ? "Sign in with your email or Google account."
                   : "Get started with your email or Google account."}
@@ -237,7 +237,7 @@ export default function AuthPanel() {
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isSubmitting}
-                className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 font-medium transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span aria-hidden="true" className="font-bold text-lg">
                   G
@@ -245,10 +245,10 @@ export default function AuthPanel() {
                 Continue with Google
               </button>
 
-              <div className="my-6 flex items-center gap-4 text-xs text-slate-500">
-                <span className="h-px flex-1 bg-slate-700" />
+              <div className="my-6 flex items-center gap-4 text-xs text-slate-400">
+                <span className="h-px flex-1 bg-slate-200" />
                 OR CONTINUE WITH EMAIL
-                <span className="h-px flex-1 bg-slate-700" />
+                <span className="h-px flex-1 bg-slate-200" />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -256,7 +256,7 @@ export default function AuthPanel() {
                   <div>
                     <label
                       htmlFor="name"
-                      className="mb-2 block text-sm font-medium text-slate-300"
+                      className="mb-2 block text-sm font-medium text-slate-700"
                     >
                       Name
                     </label>
@@ -269,7 +269,7 @@ export default function AuthPanel() {
                       required
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
                       placeholder="Your name"
                     />
                   </div>
@@ -277,7 +277,7 @@ export default function AuthPanel() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="mb-2 block text-sm font-medium text-slate-300"
+                    className="mb-2 block text-sm font-medium text-slate-700"
                   >
                     Email
                   </label>
@@ -289,14 +289,14 @@ export default function AuthPanel() {
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
                     placeholder="you@example.com"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="password"
-                    className="mb-2 block text-sm font-medium text-slate-300"
+                    className="mb-2 block text-sm font-medium text-slate-700"
                   >
                     Password
                   </label>
@@ -311,13 +311,13 @@ export default function AuthPanel() {
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
                     placeholder="At least 6 characters"
                   />
                 </div>
 
                 {errorMessage && (
-                  <p className="text-sm text-rose-300" role="alert">
+                  <p className="text-sm text-rose-600" role="alert">
                     {errorMessage}
                   </p>
                 )}
@@ -325,7 +325,7 @@ export default function AuthPanel() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full rounded-xl bg-indigo-500 px-4 py-3 font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-[#059669] px-4 py-3 font-semibold text-white transition hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting
                     ? "Please wait…"
@@ -335,7 +335,18 @@ export default function AuthPanel() {
                 </button>
               </form>
 
-              <p className="mt-6 text-center text-sm text-slate-400">
+              {mode === "sign-in" && (
+                <div className="mt-3 text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-medium text-emerald-700 hover:text-emerald-800"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              )}
+
+              <p className="mt-6 text-center text-sm text-slate-500">
                 {mode === "sign-in"
                   ? "New to Scholar AI?"
                   : "Already have an account?"}{" "}
@@ -345,7 +356,7 @@ export default function AuthPanel() {
                     setMode(mode === "sign-in" ? "sign-up" : "sign-in");
                     setErrorMessage("");
                   }}
-                  className="font-medium text-indigo-300 hover:text-indigo-200"
+                  className="font-medium text-emerald-700 hover:text-emerald-800"
                 >
                   {mode === "sign-in" ? "Create an account" : "Sign in"}
                 </button>

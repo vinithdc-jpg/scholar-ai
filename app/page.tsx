@@ -1,5 +1,5 @@
-import AuthPanel from "./auth-panel";
+import LandingPage from "@/components/landing-page";
 
 export default function Home() {
-  return <AuthPanel />;
+  return <LandingPage />;
 }

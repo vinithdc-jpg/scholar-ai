@@ -21,8 +21,8 @@ export default function SaveScholarshipButton({
       aria-pressed={saved}
       className={`grid size-10 shrink-0 place-items-center rounded-xl border transition ${
         saved
-          ? "border-[#d1fae5] bg-[#d1fae5] text-[#059669]"
-          : "border-[#e2e8f0] text-[#868da0] hover:border-[#d1fae5] hover:bg-[#f5f4ff] hover:text-[#059669]"
+          ? "border-[#e0e7ff] bg-[#e0e7ff] text-[#6366f1]"
+          : "border-[#ddd6fe] text-[#868da0] hover:border-[#e0e7ff] hover:bg-[#ede9fe] hover:text-[#6366f1]"
       }`}
     >
       {saved ? <Check size={17} /> : <Bookmark size={17} />}

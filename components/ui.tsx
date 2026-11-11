@@ -5,7 +5,7 @@ type SurfaceProps = HTMLAttributes<HTMLDivElement> & { children: ReactNode };
 export function Surface({ children, className = "", ...props }: SurfaceProps) {
   return (
     <div
-      className={`workspace-surface rounded-2xl border border-[#e2e8f0] bg-white shadow-[0_4px_18px_rgba(15,23,42,0.035)] ${className}`}
+      className={`workspace-surface rounded-2xl border border-[#ddd6fe] bg-white shadow-[0_4px_18px_rgba(15,23,42,0.035)] ${className}`}
       {...props}
     >
       {children}
@@ -15,7 +15,7 @@ export function Surface({ children, className = "", ...props }: SurfaceProps) {
 
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#047857]">
+    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#312e81]">
       {children}
     </p>
   );
@@ -56,10 +56,10 @@ export function Pill({
 }) {
   const tones = {
     neutral: "bg-[#f1f5f9] text-[#475569]",
-    green: "bg-[#d1fae5] text-[#047857]",
-    blue: "bg-[#d1fae5] text-[#047857]",
-    amber: "bg-[#fff5e3] text-[#b77719]",
-    purple: "bg-[#d1fae5] text-[#047857]",
+    green: "bg-[#e0e7ff] text-[#312e81]",
+    blue: "bg-[#e0e7ff] text-[#312e81]",
+    amber: "bg-[#fef3c7] text-[#92400e]",
+    purple: "bg-[#e0e7ff] text-[#312e81]",
   };
   return (
     <span
@@ -72,14 +72,14 @@ export function Pill({
 
 export function ProgressBar({
   value,
-  color = "bg-[#059669]",
+  color = "bg-[#6366f1]",
 }: {
   value: number;
   color?: string;
 }) {
   return (
     <div
-      className="h-2 overflow-hidden rounded-full bg-[#e2e8f0]"
+      className="h-2 overflow-hidden rounded-full bg-[#ddd6fe]"
       role="progressbar"
       aria-valuenow={value}
       aria-valuemin={0}

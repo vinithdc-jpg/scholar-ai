@@ -12,7 +12,7 @@ export default function ScholarshipCard({
   scholarship: Scholarship;
 }) {
   return (
-    <article className="workspace-surface group flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#d1fae5] hover:shadow-[0_12px_35px_rgba(47,48,100,0.08)] sm:p-5">
+    <article className="workspace-surface group flex h-full flex-col rounded-2xl border border-[#ddd6fe] bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#e0e7ff] hover:shadow-[0_12px_35px_rgba(47,48,100,0.08)] sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className={`grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${scholarship.color} text-[12px] font-bold text-white shadow-sm`}>
@@ -30,21 +30,21 @@ export default function ScholarshipCard({
         <Pill tone="purple"><Sparkles size={11} className="mr-1" /> {scholarship.match}% match</Pill>
         <Pill>{scholarship.category}</Pill>
       </div>
-      <div className="my-4 flex items-end justify-between border-t border-[#e2e8f0] pt-4">
+      <div className="my-4 flex items-end justify-between border-t border-[#ddd6fe] pt-4">
         <div>
           <p className="text-[10px] text-[#9ba1b0]">Award amount</p>
           <p className="mt-0.5 text-[20px] font-extrabold tracking-[-0.04em] text-[#0f172a] dark:text-white">{scholarship.amount}</p>
         </div>
         <div className="text-right">
           <p className="flex items-center justify-end gap-1 text-[10px] text-[#9ba1b0]"><CalendarDays size={11} /> Deadline</p>
-          <p className={`mt-1 text-[11px] font-semibold ${scholarship.daysLeft <= 14 ? "text-[#d88537]" : "text-[#656d81]"}`}>
+          <p className={`mt-1 text-[11px] font-semibold ${scholarship.daysLeft <= 14 ? "text-[#f59e0b]" : "text-[#656d81]"}`}>
             {scholarship.deadline}
           </p>
         </div>
       </div>
       <Link
         href={`/scholarships/${scholarship.id}`}
-        className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-[#f8fafc] px-4 py-2.5 text-[12px] font-bold text-[#059669] transition hover:bg-[#d1fae5] group-hover:bg-[#059669] group-hover:text-white"
+        className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-[#f5f3ff] px-4 py-2.5 text-[12px] font-bold text-[#6366f1] transition hover:bg-[#e0e7ff] group-hover:bg-[#6366f1] group-hover:text-white"
       >
         View scholarship <ArrowUpRight size={14} />
       </Link>

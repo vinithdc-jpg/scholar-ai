@@ -1,7 +1,7 @@
 import { Surface } from "@/components/ui";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-[#e2e8f0] ${className}`} />;
+  return <div className={`animate-pulse rounded-lg bg-[#ddd6fe] ${className}`} />;
 }
 
 export default function WorkspaceLoading() {

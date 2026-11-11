@@ -153,14 +153,14 @@ export default function AuthPanel() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f8fafc] px-4 py-8 text-[#0f172a] sm:px-5 sm:py-12">
+    <main className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-4 py-8 text-[#0f172a] sm:px-5 sm:py-12">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:grid-cols-2">
-        <section className="flex flex-col justify-between bg-gradient-to-br from-[#0f172a] via-[#172b35] to-[#064e3b] p-8 text-white sm:p-12">
+        <section className="flex flex-col justify-between bg-gradient-to-br from-[#312e81] via-[#4338ca] to-[#6366f1] p-8 text-white sm:p-12">
           <Link href="/" className="text-xl font-semibold tracking-tight">
-            Scholar<span className="text-emerald-300">AI</span>
+            Scholar<span className="text-indigo-300">AI</span>
           </Link>
           <div className="my-12">
-            <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-emerald-300">
+            <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-indigo-300">
               Your learning, in focus
             </p>
             <h1 className="max-w-md text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -182,7 +182,7 @@ export default function AuthPanel() {
             </p>
           ) : user ? (
             <div className="w-full max-w-sm">
-              <p className="text-sm font-medium text-emerald-700">
+              <p className="text-sm font-medium text-indigo-700">
                 Account connected
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight">
@@ -195,7 +195,7 @@ export default function AuthPanel() {
                 </p>
               )}
               {profileSaved && !isSyncingProfile && (
-                <p className="mt-4 text-sm text-emerald-700">
+                <p className="mt-4 text-sm text-indigo-700">
                   Your profile is saved.
                 </p>
               )}
@@ -208,7 +208,7 @@ export default function AuthPanel() {
                 <button
                   type="button"
                   onClick={handleProfileSync}
-                  className="mt-5 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+                  className="mt-5 text-sm font-medium text-indigo-700 hover:text-indigo-800"
                 >
                   Retry saving profile
                 </button>
@@ -217,7 +217,7 @@ export default function AuthPanel() {
                 type="button"
                 onClick={handleSignOut}
                 disabled={isSubmitting}
-                className="mt-8 w-full rounded-xl bg-[#059669] px-4 py-3 font-semibold text-white transition hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-8 w-full rounded-xl bg-[#6366f1] px-4 py-3 font-semibold text-white transition hover:bg-[#312e81] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Signing out…" : "Sign out"}
               </button>
@@ -269,7 +269,7 @@ export default function AuthPanel() {
                       required
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20"
                       placeholder="Your name"
                     />
                   </div>
@@ -289,7 +289,7 @@ export default function AuthPanel() {
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -311,7 +311,7 @@ export default function AuthPanel() {
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20"
                     placeholder="At least 6 characters"
                   />
                 </div>
@@ -325,7 +325,7 @@ export default function AuthPanel() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full rounded-xl bg-[#059669] px-4 py-3 font-semibold text-white transition hover:bg-[#047857] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-[#6366f1] px-4 py-3 font-semibold text-white transition hover:bg-[#312e81] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting
                     ? "Please wait…"
@@ -339,7 +339,7 @@ export default function AuthPanel() {
                 <div className="mt-3 text-right">
                   <Link
                     href="/forgot-password"
-                    className="text-xs font-medium text-emerald-700 hover:text-emerald-800"
+                    className="text-xs font-medium text-indigo-700 hover:text-indigo-800"
                   >
                     Forgot password?
                   </Link>
@@ -356,7 +356,7 @@ export default function AuthPanel() {
                     setMode(mode === "sign-in" ? "sign-up" : "sign-in");
                     setErrorMessage("");
                   }}
-                  className="font-medium text-emerald-700 hover:text-emerald-800"
+                  className="font-medium text-indigo-700 hover:text-indigo-800"
                 >
                   {mode === "sign-in" ? "Create an account" : "Sign in"}
                 </button>

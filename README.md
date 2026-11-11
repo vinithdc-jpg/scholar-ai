@@ -1,4 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project with Firebase Authentication.
+
+See [API_ENDPOINTS.md](./API_ENDPOINTS.md) for implemented API routes and the
+planned endpoint inventory.
+
+## Firebase Authentication
+
+The sign-in page supports email/password registration and sign-in, Google sign-in, and sign-out. Set the following Firebase Web App configuration values in `.env.local`:
+
+```text
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+```
+
+In the Firebase Console, enable **Email/Password** and **Google** under **Authentication → Sign-in method**, and add your local/deployed hostnames under **Authentication → Settings → Authorized domains**.
+
+## User profile persistence
+
+After Firebase sign-in or registration, the app verifies the Firebase ID token on the server and inserts or updates the user's `firebase_uid`, `full_name`, and `email` in PostgreSQL. Email/password registration also saves the name in the Firebase profile; Google sign-in uses the name provided by Google.
+
+Passwords are managed by Firebase Authentication and are intentionally not stored in PostgreSQL. Do not add a plaintext password column to the users table.
+
+1. Create a PostgreSQL database and set `DATABASE_URL` in `.env.local`.
+2. Keep the Firebase service-account JSON at `private/firebase-service-account.json` for local development. This backend-only file is ignored by Git. Set `FIREBASE_SERVICE_ACCOUNT_PATH=./private/firebase-service-account.json` in `.env.local`.
+3. For Vercel, set `FIREBASE_SERVICE_ACCOUNT_JSON` to the complete service-account JSON as a server-only environment variable. Do not use a `NEXT_PUBLIC_` prefix. This variable can also be used in environments where a credential file is unsuitable.
+4. As an alternative, set `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, and `FIREBASE_ADMIN_PRIVATE_KEY`. Escaped newlines (`\n`) in the private key are converted automatically. Never expose these variables to the browser.
+5. Run `npm run db:migrate` to create/upgrade the schema and enable the pgvector extension. Run `npm run db:verify` to check the connection, migration tracking, and pgvector extension.
+
+Firebase Admin reads credentials from `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBASE_SERVICE_ACCOUNT_PATH`, validates the required fields, and initializes one named Admin app for reuse. The `/api/users/me` endpoint verifies ID tokens before persisting a profile. Missing, invalid, and expired tokens are rejected with HTTP 401; missing server credentials produce HTTP 500.
+
+The browser obtains tokens with Firebase `user.getIdToken()`, which refreshes expired tokens automatically, and sends them in the `Authorization: Bearer <token>` header.
+
+## Database and environment setup
+
+The server validates `DATABASE_URL` during startup and before opening a PostgreSQL connection. Copy `.env.example` to `.env.local`, configure `DATABASE_URL` and the existing Firebase client/Admin settings, then apply migrations. Secret-bearing values must remain server-only.
+
+The initial migration creates the application tables and enables `vector`. The embedding model and vector dimensions have not been selected yet, so `document_chunks.embedding` is dimension-flexible and its ANN index is intentionally deferred until the embedding provider is selected; this avoids locking the schema to an unsupported dimension.
+
+The application currently uses the root `app/` App Router structure. Feature-specific folders will be added as each implementation phase needs them rather than scaffolding empty directories.
 
 ## Getting Started
 

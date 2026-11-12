@@ -33,7 +33,7 @@ export function SectionHeading({
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 className="text-[18px] font-bold tracking-[-0.025em] text-[#0f172a] dark:text-white">
+        <h2 className="text-[18px] font-bold tracking-tight text-[#0f172a] dark:text-white">
           {title}
         </h2>
         {description && (

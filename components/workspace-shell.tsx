@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   Bell,
   Bookmark,
   Bot,
   ChevronDown,
-  CircleHelp,
   Command,
   Compass,
   FileCheck2,
   GraduationCap,
   LayoutDashboard,
+  LogOut,
   Menu,
   Moon,
   Search,
@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { useSavedScholarships } from "@/components/saved-scholarships-provider";
+import { logoutUser } from "@/lib/auth";
 
 function subscribeToTheme(callback: () => void) {
   window.addEventListener("scholarai-theme-change", callback);
@@ -91,7 +92,10 @@ function NavigationLink({
 
 export default function WorkspaceShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const { savedIds } = useSavedScholarships();
   const darkMode = useSyncExternalStore(
     subscribeToTheme,
@@ -111,6 +115,24 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 
   const closeMenu = () => setMobileMenuOpen(false);
 
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    setLogoutError("");
+
+    try {
+      await logoutUser();
+      router.replace("/login");
+    } catch (error) {
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out. Please try again.",
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
   return (
     <div className="workspace-canvas min-h-screen bg-[#f5f3ff] dark:bg-[#10131d]">
       <div
@@ -121,13 +143,13 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
         aria-hidden="true"
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-white/10 bg-[#312e81] px-4 pb-5 pt-6 text-white transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-65 flex-col border-r border-white/10 bg-[#312e81] px-4 pb-5 pt-6 text-white transition-transform duration-300 md:translate-x-0 ${
           mobileMenuOpen ? "visible translate-x-0" : "-translate-x-full invisible md:visible"
         }`}
       >
         <div className="mb-9 flex items-center justify-between px-2">
           <Link href="/dashboard" className="flex items-center gap-2.5" onClick={closeMenu}>
-            <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#312e81] text-white shadow-md shadow-indigo-200">
+            <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-[#6366f1] to-[#312e81] text-white shadow-md shadow-indigo-200">
               <GraduationCap size={21} strokeWidth={2.2} />
             </span>
             <span className="text-[17px] font-extrabold tracking-[-0.04em] text-white">
@@ -150,14 +172,17 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             <span className="text-[11px] font-bold text-amber-400">72%</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-[#6366f1] to-amber-400" />
+            <div className="h-full w-[72%] rounded-full bg-linear-to-r from-[#6366f1] to-amber-400" />
           </div>
           <Link href="/profile" onClick={closeMenu} className="mt-2 block text-[10px] font-semibold text-indigo-200 hover:underline">
             Complete your profile <span aria-hidden="true">→</span>
           </Link>
         </div>
 
-        <nav aria-label="Main navigation" className="flex-1 space-y-1">
+        <nav
+          aria-label="Main navigation"
+          className="min-h-0 flex-1 space-y-1 overflow-y-auto"
+        >
           <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.13em] text-indigo-200">
             Workspace
           </p>
@@ -194,33 +219,24 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
           </Link>
         </nav>
 
-        <div className="mb-4 rounded-2xl border border-white/15 bg-white/10 p-4">
-          <div className="mb-2 grid size-8 place-items-center rounded-lg bg-white/10 text-amber-300">
-            <CircleHelp size={17} />
-          </div>
-          <p className="text-[12px] font-bold text-white">Need a little help?</p>
-          <p className="mt-1 text-[11px] leading-5 text-indigo-100">
-            Our guide can help you find your next opportunity.
+        {logoutError && (
+          <p className="mt-3 px-1 text-xs text-rose-200" role="alert">
+            {logoutError}
           </p>
-          <Link href="/assistant" onClick={closeMenu} className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-indigo-200 hover:underline">
-            Ask ScholarAI <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2.5 border-t border-white/15 px-1 pt-4">
-          <div className="grid size-9 place-items-center rounded-full bg-white/15 text-[12px] font-bold text-white">JD</div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-bold text-white">Jordan Davis</p>
-            <p className="truncate text-[10px] text-indigo-200">Student account</p>
-          </div>
-          <button type="button" className="rounded-lg p-1.5 text-indigo-200 hover:bg-white/10" aria-label="Account options">
-            <ChevronDown size={16} />
-          </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="mt-3 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-indigo-100 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <LogOut aria-hidden="true" size={17} />
+          {isLoggingOut ? "Signing out…" : "Log out"}
+        </button>
       </aside>
 
-      <div className="md:pl-[260px]">
-        <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b border-[#4338ca] bg-[#312e81]/95 px-4 text-white backdrop-blur-md sm:px-7 lg:px-9">
+      <div className="md:pl-65">
+        <header className="sticky top-0 z-30 flex h-17 items-center justify-between border-b border-[#4338ca] bg-[#312e81]/95 px-4 text-white backdrop-blur-md sm:px-7 lg:px-9">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -264,7 +280,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-7 sm:py-8 lg:px-9">
+        <main className="mx-auto w-full max-w-375 px-4 py-6 sm:px-7 sm:py-8 lg:px-9">
           {children}
           <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-[#ddd6fe] py-5 text-[10px] text-[#a0a6b4]">
             <span>© 2026 ScholarAI. Built for your next big step.</span>

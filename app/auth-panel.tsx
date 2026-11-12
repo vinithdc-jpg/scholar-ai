@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { FirebaseError } from "@/lib/firebase";
@@ -42,6 +43,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function AuthPanel() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [name, setName] = useState("");
@@ -60,6 +62,10 @@ export default function AuthPanel() {
       (currentUser) => {
         setUser(currentUser);
         setIsCheckingAuth(false);
+
+        if (currentUser) {
+          router.replace("/dashboard");
+        }
 
         if (initialAuthState.current) {
           initialAuthState.current = false;
@@ -83,7 +89,7 @@ export default function AuthPanel() {
         setIsCheckingAuth(false);
       },
     );
-  }, []);
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -155,7 +161,7 @@ export default function AuthPanel() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-4 py-8 text-[#0f172a] sm:px-5 sm:py-12">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:grid-cols-2">
-        <section className="flex flex-col justify-between bg-gradient-to-br from-[#312e81] via-[#4338ca] to-[#6366f1] p-8 text-white sm:p-12">
+        <section className="flex flex-col justify-between bg-linear-to-br from-[#312e81] via-[#4338ca] to-[#6366f1] p-8 text-white sm:p-12">
           <Link href="/" className="text-xl font-semibold tracking-tight">
             Scholar<span className="text-indigo-300">AI</span>
           </Link>

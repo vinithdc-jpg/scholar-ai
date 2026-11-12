@@ -14,19 +14,19 @@ export default function RegisterPage() {
 
   return (
     <main className="grid min-h-screen bg-white lg:grid-cols-[0.85fr_1.15fr]">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-[#312e81] via-[#6366f1] to-[#6366f1] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
-        <div className="absolute -right-36 top-20 size-[440px] rounded-full border border-white/10" />
-        <div className="absolute -right-16 top-44 size-[280px] rounded-full border border-white/10" />
+      <section className="relative hidden overflow-hidden bg-linear-to-br from-[#312e81] via-[#6366f1] to-[#6366f1] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
+        <div className="absolute -right-36 top-20 size-110 rounded-full border border-white/10" />
+        <div className="absolute -right-16 top-44 size-70 rounded-full border border-white/10" />
         <Link
           href="/"
-          className="relative z-10 flex items-center gap-2.5 text-[17px] font-extrabold tracking-[-0.05em]"
+          className="relative z-10 flex items-center gap-2.5 text-[17px] font-extrabold tracking-tighter"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-white/15">
             <GraduationCap size={21} />
           </span>
           scholarai
         </Link>
-        <div className="relative z-10 max-w-[440px]">
+        <div className="relative z-10 max-w-110">
           <span className="grid size-12 place-items-center rounded-2xl bg-white/15">
             <Sparkles size={22} />
           </span>
@@ -43,7 +43,7 @@ export default function RegisterPage() {
         </p>
       </section>
       <section className="flex items-center justify-center px-5 py-10 sm:px-8">
-        <div className="w-full max-w-[410px]">
+        <div className="w-full max-w-102.5">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-[10px] font-semibold text-[#858c9e] hover:text-[#312e81]"
@@ -54,7 +54,7 @@ export default function RegisterPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#6366f1]">
               Your next chapter starts here
             </p>
-            <h2 className="mt-2 text-[29px] font-extrabold tracking-[-0.05em] text-[#0f172a]">
+            <h2 className="mt-2 text-[29px] font-extrabold tracking-tighter text-[#0f172a]">
               Create your account
             </h2>
             <p className="mt-2 text-[12px] text-[#858c9e]">

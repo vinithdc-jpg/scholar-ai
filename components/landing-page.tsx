@@ -41,12 +41,12 @@ const featureItems = [
 export default function LandingPage() {
   return (
     <main className="overflow-hidden bg-white text-[#0f172a]">
-      <header className="relative z-10 mx-auto flex max-w-[1240px] items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
+      <header className="relative z-10 mx-auto flex max-w-310 items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#312e81] text-white shadow-md shadow-indigo-200">
+          <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-[#6366f1] to-[#312e81] text-white shadow-md shadow-indigo-200">
             <GraduationCap size={21} />
           </span>
-          <span className="text-[18px] font-extrabold tracking-[-0.05em]">
+          <span className="text-[18px] font-extrabold tracking-tighter">
             scholar<span className="text-[#6366f1]">ai</span>
           </span>
         </Link>
@@ -83,9 +83,9 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-5 pb-20 pt-10 sm:px-8 sm:pb-24 sm:pt-14 lg:grid-cols-[1.04fr_0.96fr] lg:gap-6 lg:px-10 lg:pb-28 lg:pt-16">
-        <div className="pointer-events-none absolute -left-44 top-0 size-[500px] rounded-full bg-[#e0e7ff] opacity-70 blur-[90px]" />
-        <div className="relative z-10 max-w-[600px]">
+      <section className="relative mx-auto grid max-w-310 items-center gap-12 px-5 pb-20 pt-10 sm:px-8 sm:pb-24 sm:pt-14 lg:grid-cols-[1.04fr_0.96fr] lg:gap-6 lg:px-10 lg:pb-28 lg:pt-16">
+        <div className="pointer-events-none absolute -left-44 top-0 size-125 rounded-full bg-[#e0e7ff] opacity-70 blur-[90px]" />
+        <div className="relative z-10 max-w-150">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e0e7ff] bg-[#e0e7ff] px-3 py-1.5 text-[11px] font-semibold text-[#6366f1]">
             <span className="grid size-5 place-items-center rounded-full bg-white">
               <Sparkles size={12} />
@@ -95,17 +95,17 @@ export default function LandingPage() {
           <h1 className="text-[43px] font-extrabold leading-[1.09] tracking-[-0.065em] text-[#0f172a] sm:text-[58px] lg:text-[68px]">
             Your future is
             <br />
-            <span className="bg-gradient-to-r from-[#6366f1] via-[#6366f1] to-[#6366f1] bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-[#6366f1] via-[#6366f1] to-[#6366f1] bg-clip-text text-transparent">
               worth investing in.
             </span>
           </h1>
-          <p className="mt-6 max-w-[510px] text-[15px] leading-7 text-[#737b91] sm:text-[16px]">
+          <p className="mt-6 max-w-127.5 text-[15px] leading-7 text-[#737b91] sm:text-[16px]">
             Find scholarships that fit your story, make sense of the details,
             and take your next step with confidence.
           </p>
           <form
             action="/scholarships"
-            className="mt-8 flex max-w-[540px] flex-col gap-2 rounded-2xl border border-[#ddd6fe] bg-white p-2 shadow-[0_14px_45px_rgba(48,52,111,0.09)] sm:flex-row"
+            className="mt-8 flex max-w-135 flex-col gap-2 rounded-2xl border border-[#ddd6fe] bg-white p-2 shadow-[0_14px_45px_rgba(48,52,111,0.09)] sm:flex-row"
           >
             <label className="flex min-h-12 flex-1 items-center gap-3 px-3">
               <Search size={18} className="shrink-0 text-[#9ba1b2]" />
@@ -139,10 +139,10 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[540px] lg:ml-auto">
+        <div className="relative mx-auto w-full max-w-135 lg:ml-auto">
           <div className="absolute -right-10 -top-8 size-36 rounded-full bg-[#e0e7ff] blur-3xl" />
           <div className="absolute -bottom-5 -left-7 size-36 rounded-full bg-[#e0e7ff] blur-3xl" />
-          <div className="relative rounded-[30px] border border-[#ddd6fe] bg-gradient-to-br from-white via-[#f5f3ff] to-[#f5f3ff] p-5 shadow-[0_30px_70px_rgba(15,23,42,0.10)] sm:p-7">
+          <div className="relative rounded-[30px] border border-[#ddd6fe] bg-linear-to-br from-white via-[#f5f3ff] to-[#f5f3ff] p-5 shadow-[0_30px_70px_rgba(15,23,42,0.10)] sm:p-7">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-semibold text-[#858ba0]">
@@ -172,7 +172,7 @@ export default function LandingPage() {
                 </p>
               </div>
               <div
-                className="flex h-[75px] items-end gap-1.5"
+                className="flex h-18.75 items-end gap-1.5"
                 aria-label="Illustrative rising scholarship match chart"
               >
                 {[24, 35, 29, 48, 41, 58, 52, 69, 63, 85].map(
@@ -261,14 +261,14 @@ export default function LandingPage() {
       </section>
 
       <section className="border-y border-[#ede9fe] bg-[#f5f3ff] py-7">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-center gap-x-10 gap-y-5 px-5 text-center sm:px-8 lg:justify-between lg:px-10">
+        <div className="mx-auto flex max-w-310 flex-wrap items-center justify-center gap-x-10 gap-y-5 px-5 text-center sm:px-8 lg:justify-between lg:px-10">
           {[
             { value: "12k+", label: "opportunities to explore" },
             { value: "$3.2B", label: "in education funding" },
             { value: "98%", label: "students find a match" },
             { value: "100%", label: "free to get started" },
           ].map((stat) => (
-            <div key={stat.label} className="min-w-[130px]">
+            <div key={stat.label} className="min-w-32.5">
               <p className="text-[20px] font-extrabold tracking-[-0.04em] text-[#0f172a]">
                 {stat.value}
               </p>
@@ -280,13 +280,13 @@ export default function LandingPage() {
 
       <section
         id="why-scholarai"
-        className="mx-auto max-w-[1240px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10"
+        className="mx-auto max-w-310 px-5 py-20 sm:px-8 sm:py-24 lg:px-10"
       >
-        <div className="mx-auto max-w-[570px] text-center">
+        <div className="mx-auto max-w-142.5 text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6366f1]">
             A little less searching. A lot more possibility.
           </p>
-          <h2 className="mt-3 text-[31px] font-extrabold leading-tight tracking-[-0.05em] text-[#0f172a] sm:text-[40px]">
+          <h2 className="mt-3 text-[31px] font-extrabold leading-tight tracking-tighter text-[#0f172a] sm:text-[40px]">
             A clearer path to the support you deserve.
           </h2>
           <p className="mt-4 text-[13px] leading-6 text-[#81889a]">
@@ -318,15 +318,15 @@ export default function LandingPage() {
       </section>
 
       <section id="how-it-works" className="bg-[#f5f3ff] py-20 sm:py-24">
-        <div className="mx-auto grid max-w-[1240px] gap-12 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:px-10">
+        <div className="mx-auto grid max-w-310 gap-12 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:px-10">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6366f1]">
               Simple by design
             </p>
-            <h2 className="mt-3 max-w-[420px] text-[32px] font-extrabold leading-tight tracking-[-0.05em] text-[#0f172a] sm:text-[40px]">
+            <h2 className="mt-3 max-w-105 text-[32px] font-extrabold leading-tight tracking-tighter text-[#0f172a] sm:text-[40px]">
               Three small steps. A future of possibilities.
             </h2>
-            <p className="mt-4 max-w-[390px] text-[13px] leading-6 text-[#81889a]">
+            <p className="mt-4 max-w-97.5 text-[13px] leading-6 text-[#81889a]">
               A little about you is all we need to point you in the right
               direction.
             </p>
@@ -391,18 +391,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1240px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#312e81] via-[#6366f1] to-[#6366f1] px-6 py-10 text-white sm:px-12 sm:py-12 lg:px-16">
+      <section className="mx-auto max-w-310 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="relative overflow-hidden rounded-[26px] bg-linear-to-br from-[#312e81] via-[#6366f1] to-[#6366f1] px-6 py-10 text-white sm:px-12 sm:py-12 lg:px-16">
           <div className="absolute -right-12 -top-28 size-80 rounded-full border border-white/10" />
           <div className="absolute -right-2 -top-16 size-60 rounded-full border border-white/10" />
-          <div className="relative z-10 max-w-[580px]">
+          <div className="relative z-10 max-w-145">
             <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-indigo-100">
               Your next chapter is closer than you think
             </p>
-            <h2 className="mt-3 text-[30px] font-extrabold leading-tight tracking-[-0.05em] sm:text-[39px]">
+            <h2 className="mt-3 text-[30px] font-extrabold leading-tight tracking-tighter sm:text-[39px]">
               Let’s find the support that moves you forward.
             </h2>
-            <p className="mt-3 max-w-[460px] text-[12px] leading-6 text-indigo-100">
+            <p className="mt-3 max-w-115 text-[12px] leading-6 text-indigo-100">
               Create your free profile and discover opportunities that are as
               individual as you are.
             </p>
@@ -417,7 +417,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-[#ddd6fe] bg-[#f5f3ff]">
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-5 px-5 py-7 text-[10px] text-[#868d9e] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+        <div className="mx-auto flex max-w-310 flex-col gap-5 px-5 py-7 text-[10px] text-[#868d9e] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
           <Link
             href="/"
             className="flex items-center gap-2 text-[13px] font-extrabold tracking-[-0.04em] text-[#0f172a]"

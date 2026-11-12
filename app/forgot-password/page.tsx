@@ -20,10 +20,10 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-5 py-10">
-      <div className="w-full max-w-[430px] rounded-[24px] border border-[#ddd6fe] bg-white p-6 shadow-[0_20px_70px_rgba(47,48,100,0.07)] sm:p-9">
+      <div className="w-full max-w-107.5 rounded-3xl border border-[#ddd6fe] bg-white p-6 shadow-[0_20px_70px_rgba(47,48,100,0.07)] sm:p-9">
         <Link
           href="/"
-          className="flex items-center gap-2 text-[15px] font-extrabold tracking-[-0.05em] text-[#0f172a]"
+          className="flex items-center gap-2 text-[15px] font-extrabold tracking-tighter text-[#0f172a]"
         >
           <span className="grid size-8 place-items-center rounded-lg bg-[#6366f1] text-white">
             <GraduationCap size={18} />
@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
             <div className="mt-9 grid size-11 place-items-center rounded-2xl bg-[#e0e7ff] text-[#6366f1]">
               <Mail size={19} />
             </div>
-            <h1 className="mt-5 text-[23px] font-extrabold tracking-[-0.05em] text-[#0f172a]">
+            <h1 className="mt-5 text-[23px] font-extrabold tracking-tighter text-[#0f172a]">
               Forgot your password?
             </h1>
             <p className="mt-2 text-[11px] leading-5 text-[#838a9d]">

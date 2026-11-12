@@ -20,7 +20,10 @@ export async function GET(request: Request) {
        ORDER BY ss.created_at DESC LIMIT $2 OFFSET $3`,
       [auth.user.id, limit, offset],
     );
-    return NextResponse.json({ scholarships: result.rows, pagination: { page, limit } });
+    return NextResponse.json({
+      scholarships: result.rows,
+      pagination: { page, limit },
+    });
   } catch (error) {
     return databaseError("Unable to load saved scholarships.", error);
   }
@@ -47,11 +50,17 @@ export async function POST(request: Request) {
         [auth.user.id, parsed.data.scholarship_id],
       );
       if (!exists.rowCount) {
-        return NextResponse.json({ error: "Published scholarship not found." }, { status: 404 });
+        return NextResponse.json(
+          { error: "Published scholarship not found." },
+          { status: 404 },
+        );
       }
       return NextResponse.json({ savedScholarship: exists.rows[0] });
     }
-    return NextResponse.json({ savedScholarship: result.rows[0] }, { status: 201 });
+    return NextResponse.json(
+      { savedScholarship: result.rows[0] },
+      { status: 201 },
+    );
   } catch (error) {
     return databaseError("Unable to save scholarship.", error);
   }

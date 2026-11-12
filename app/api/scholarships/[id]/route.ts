@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  authenticateRequest,
-  isResponse,
-  requireRoles,
-} from "@/lib/api/auth";
+import { authenticateRequest, isResponse, requireRoles } from "@/lib/api/auth";
 import { databaseError, readJson } from "@/lib/api/http";
-import {
-  scholarshipFields,
-  scholarshipSchema,
-} from "@/lib/api/scholarships";
+import { scholarshipFields, scholarshipSchema } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -21,7 +14,10 @@ export async function GET(request: Request, context: RouteContext) {
   const { id: rawId } = await context.params;
   const id = idSchema.safeParse(rawId);
   if (!id.success) {
-    return NextResponse.json({ error: "Invalid scholarship ID." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid scholarship ID." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -34,7 +30,10 @@ export async function GET(request: Request, context: RouteContext) {
       ],
     );
     if (!result.rowCount) {
-      return NextResponse.json({ error: "Scholarship not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Scholarship not found." },
+        { status: 404 },
+      );
     }
     return NextResponse.json({ scholarship: result.rows[0] });
   } catch (error) {
@@ -48,12 +47,18 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { id: rawId } = await context.params;
   const id = idSchema.safeParse(rawId);
   if (!id.success) {
-    return NextResponse.json({ error: "Invalid scholarship ID." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid scholarship ID." },
+      { status: 400 },
+    );
   }
   const parsed = await readJson(request, scholarshipSchema.partial());
   if (parsed.response) return parsed.response;
   if (!Object.keys(parsed.data).length) {
-    return NextResponse.json({ error: "Provide at least one field to update." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Provide at least one field to update." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -69,7 +74,10 @@ export async function PATCH(request: Request, context: RouteContext) {
       [...values, id.data],
     );
     if (!result.rowCount) {
-      return NextResponse.json({ error: "Scholarship not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Scholarship not found." },
+        { status: 404 },
+      );
     }
     return NextResponse.json({ scholarship: result.rows[0] });
   } catch (error) {
@@ -83,7 +91,10 @@ export async function DELETE(request: Request, context: RouteContext) {
   const { id: rawId } = await context.params;
   const id = idSchema.safeParse(rawId);
   if (!id.success) {
-    return NextResponse.json({ error: "Invalid scholarship ID." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid scholarship ID." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -93,7 +104,10 @@ export async function DELETE(request: Request, context: RouteContext) {
       [id.data],
     );
     if (!result.rowCount) {
-      return NextResponse.json({ error: "Scholarship not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Scholarship not found." },
+        { status: 404 },
+      );
     }
     return NextResponse.json({ scholarship: result.rows[0] });
   } catch (error) {

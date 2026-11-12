@@ -12,15 +12,40 @@ const schema = z.object({
 function matches(actual: unknown, operator: string, expected: unknown) {
   const value = actual as string | number | undefined | null;
   switch (operator) {
-    case "equals": return value === expected;
-    case "not_equals": return value !== expected;
-    case "greater_than": return typeof value === "number" && typeof expected === "number" && value > expected;
-    case "greater_than_or_equal": return typeof value === "number" && typeof expected === "number" && value >= expected;
-    case "less_than": return typeof value === "number" && typeof expected === "number" && value < expected;
-    case "less_than_or_equal": return typeof value === "number" && typeof expected === "number" && value <= expected;
-    case "in": return Array.isArray(expected) && expected.includes(value);
-    case "not_in": return Array.isArray(expected) && !expected.includes(value);
-    default: return false;
+    case "equals":
+      return value === expected;
+    case "not_equals":
+      return value !== expected;
+    case "greater_than":
+      return (
+        typeof value === "number" &&
+        typeof expected === "number" &&
+        value > expected
+      );
+    case "greater_than_or_equal":
+      return (
+        typeof value === "number" &&
+        typeof expected === "number" &&
+        value >= expected
+      );
+    case "less_than":
+      return (
+        typeof value === "number" &&
+        typeof expected === "number" &&
+        value < expected
+      );
+    case "less_than_or_equal":
+      return (
+        typeof value === "number" &&
+        typeof expected === "number" &&
+        value <= expected
+      );
+    case "in":
+      return Array.isArray(expected) && expected.includes(value);
+    case "not_in":
+      return Array.isArray(expected) && !expected.includes(value);
+    default:
+      return false;
   }
 }
 
@@ -40,15 +65,23 @@ export async function POST(request: Request) {
       ),
       parsed.data.profile
         ? Promise.resolve({ rows: [parsed.data.profile], rowCount: 1 })
-        : pool.query("SELECT * FROM student_profiles WHERE user_id = $1", [auth.user.id]),
+        : pool.query("SELECT * FROM student_profiles WHERE user_id = $1", [
+            auth.user.id,
+          ]),
     ]);
 
     if (!scholarship.rowCount) {
-      return NextResponse.json({ error: "Scholarship not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Scholarship not found." },
+        { status: 404 },
+      );
     }
     if (!profile.rowCount) {
       return NextResponse.json(
-        { result: "more_information_required", missing_information: ["student profile"] },
+        {
+          result: "more_information_required",
+          missing_information: ["student profile"],
+        },
         { status: 200 },
       );
     }
@@ -65,11 +98,14 @@ export async function POST(request: Request) {
         field: rule.rule_field,
         description: rule.description,
         mandatory: rule.is_mandatory,
-        matched: actual == null ? null : matches(actual, rule.operator, expected),
+        matched:
+          actual == null ? null : matches(actual, rule.operator, expected),
       };
     });
     const missing = outcomes.filter((item) => item.matched === null);
-    const failed = outcomes.filter((item) => item.matched === false && item.mandatory);
+    const failed = outcomes.filter(
+      (item) => item.matched === false && item.mandatory,
+    );
     return NextResponse.json({
       result: failed.length
         ? "not_eligible"

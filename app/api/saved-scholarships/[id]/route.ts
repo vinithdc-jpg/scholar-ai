@@ -12,7 +12,10 @@ export async function DELETE(request: Request, context: RouteContext) {
   const { id: rawId } = await context.params;
   const id = z.coerce.number().int().positive().safeParse(rawId);
   if (!id.success) {
-    return NextResponse.json({ error: "Invalid saved scholarship ID." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid saved scholarship ID." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -21,7 +24,10 @@ export async function DELETE(request: Request, context: RouteContext) {
       [id.data, auth.user.id],
     );
     if (!result.rowCount) {
-      return NextResponse.json({ error: "Saved scholarship not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Saved scholarship not found." },
+        { status: 404 },
+      );
     }
     return NextResponse.json({ success: true });
   } catch (error) {

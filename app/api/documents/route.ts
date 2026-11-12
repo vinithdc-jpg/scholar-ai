@@ -21,7 +21,10 @@ export async function GET(request: Request) {
        LIMIT $${isAdmin ? 1 : 2} OFFSET $${isAdmin ? 2 : 3}`,
       isAdmin ? [limit, offset] : [auth.user.id, limit, offset],
     );
-    return NextResponse.json({ documents: result.rows, pagination: { page, limit } });
+    return NextResponse.json({
+      documents: result.rows,
+      pagination: { page, limit },
+    });
   } catch (error) {
     return databaseError("Unable to list documents.", error);
   }

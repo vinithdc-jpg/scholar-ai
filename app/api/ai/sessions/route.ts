@@ -14,7 +14,10 @@ export async function GET(request: Request) {
        ORDER BY updated_at DESC LIMIT $2 OFFSET $3`,
       [auth.user.id, limit, offset],
     );
-    return NextResponse.json({ sessions: result.rows, pagination: { page, limit } });
+    return NextResponse.json({
+      sessions: result.rows,
+      pagination: { page, limit },
+    });
   } catch (error) {
     return databaseError("Unable to list chat sessions.", error);
   }

@@ -29,13 +29,19 @@ export async function POST(request: Request) {
   const env = getServerEnv();
   if (!env.GROQ_API_KEY || !env.EMBEDDING_PROVIDER || !env.EMBEDDING_MODEL) {
     return NextResponse.json(
-      { error: "The RAG chat service is not configured. Configure the LLM and embedding provider first." },
+      {
+        error:
+          "The RAG chat service is not configured. Configure the LLM and embedding provider first.",
+      },
       { status: 503 },
     );
   }
 
   return NextResponse.json(
-    { error: "The grounded retrieval and citation pipeline is not implemented yet." },
+    {
+      error:
+        "The grounded retrieval and citation pipeline is not implemented yet.",
+    },
     { status: 503 },
   );
 }

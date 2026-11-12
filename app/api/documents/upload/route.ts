@@ -15,20 +15,38 @@ export async function POST(request: Request) {
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json({ error: "Expected multipart form data." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Expected multipart form data." },
+      { status: 400 },
+    );
   }
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "A PDF file is required in the file field." }, { status: 400 });
+    return NextResponse.json(
+      { error: "A PDF file is required in the file field." },
+      { status: 400 },
+    );
   }
-  if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) {
-    return NextResponse.json({ error: "Only PDF documents can be uploaded." }, { status: 415 });
+  if (
+    file.type !== "application/pdf" ||
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    return NextResponse.json(
+      { error: "Only PDF documents can be uploaded." },
+      { status: 415 },
+    );
   }
   if (!(await file.slice(0, 5).text()).startsWith("%PDF-")) {
-    return NextResponse.json({ error: "The uploaded file is not a valid PDF." }, { status: 415 });
+    return NextResponse.json(
+      { error: "The uploaded file is not a valid PDF." },
+      { status: 415 },
+    );
   }
   if (file.size < 1 || file.size > maxFileSize) {
-    return NextResponse.json({ error: "PDF files must be smaller than 10 MB." }, { status: 413 });
+    return NextResponse.json(
+      { error: "PDF files must be smaller than 10 MB." },
+      { status: 413 },
+    );
   }
 
   const metadataSchema = z.object({
@@ -47,13 +65,19 @@ export async function POST(request: Request) {
   });
   if (!metadata.success) {
     return NextResponse.json(
-      { error: "Document metadata is invalid.", details: metadata.error.issues },
+      {
+        error: "Document metadata is invalid.",
+        details: metadata.error.issues,
+      },
       { status: 400 },
     );
   }
 
   if (!getServerEnv().CLOUDINARY_CLOUD_NAME) {
-    return NextResponse.json({ error: "Cloudinary is not configured." }, { status: 503 });
+    return NextResponse.json(
+      { error: "Cloudinary is not configured." },
+      { status: 503 },
+    );
   }
 
   try {
@@ -85,7 +109,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Unable to upload and save document.", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Document upload failed." },
+      {
+        error:
+          error instanceof Error ? error.message : "Document upload failed.",
+      },
       { status: 503 },
     );
   }

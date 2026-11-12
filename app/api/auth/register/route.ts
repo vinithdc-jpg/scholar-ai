@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { readJson } from "@/lib/api/http";
-import { firebasePasswordAuth, setFirebaseDisplayName } from "@/lib/api/firebase-rest";
+import {
+  firebasePasswordAuth,
+  setFirebaseDisplayName,
+} from "@/lib/api/firebase-rest";
 import { getDatabasePool } from "@/lib/db";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 
@@ -22,15 +25,22 @@ export async function POST(request: Request) {
       parsed.data.email,
       parsed.data.password,
     );
-    if (!authResult.idToken) throw new Error("Firebase did not return an ID token.");
+    if (!authResult.idToken)
+      throw new Error("Firebase did not return an ID token.");
     createdUid = authResult.localId;
 
     const namedAuthResult = await setFirebaseDisplayName(
       authResult.idToken,
       parsed.data.name,
     );
-    if (!namedAuthResult.idToken || !namedAuthResult.localId || !namedAuthResult.email) {
-      throw new Error("Firebase did not return a complete registration result.");
+    if (
+      !namedAuthResult.idToken ||
+      !namedAuthResult.localId ||
+      !namedAuthResult.email
+    ) {
+      throw new Error(
+        "Firebase did not return a complete registration result.",
+      );
     }
 
     let profile;
@@ -46,15 +56,23 @@ export async function POST(request: Request) {
         [namedAuthResult.localId, parsed.data.name, namedAuthResult.email],
       );
     } catch (error) {
-      console.error("Unable to persist profile after Firebase registration.", error);
+      console.error(
+        "Unable to persist profile after Firebase registration.",
+        error,
+      );
       try {
         await getFirebaseAdminAuth().deleteUser(namedAuthResult.localId);
         createdUid = undefined;
       } catch {
-        console.error("Unable to roll back Firebase account after profile save failure.");
+        console.error(
+          "Unable to roll back Firebase account after profile save failure.",
+        );
       }
       return NextResponse.json(
-        { error: "Account was created but its profile could not be saved. Check database setup and try again." },
+        {
+          error:
+            "Account was created but its profile could not be saved. Check database setup and try again.",
+        },
         { status: 503 },
       );
     }

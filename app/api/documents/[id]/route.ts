@@ -10,8 +10,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(request: Request, context: RouteContext) {
   const auth = await authenticateRequest(request);
   if (isResponse(auth)) return auth.response;
-  const id = z.coerce.number().int().positive().safeParse((await context.params).id);
-  if (!id.success) return NextResponse.json({ error: "Invalid document ID." }, { status: 400 });
+  const id = z.coerce
+    .number()
+    .int()
+    .positive()
+    .safeParse((await context.params).id);
+  if (!id.success)
+    return NextResponse.json(
+      { error: "Invalid document ID." },
+      { status: 400 },
+    );
   const isAdmin = auth.user.role !== "student";
 
   try {
@@ -24,7 +32,11 @@ export async function GET(request: Request, context: RouteContext) {
        ${isAdmin ? "" : "AND uploaded_by = $2"}`,
       isAdmin ? [id.data] : [id.data, auth.user.id],
     );
-    if (!result.rowCount) return NextResponse.json({ error: "Document not found." }, { status: 404 });
+    if (!result.rowCount)
+      return NextResponse.json(
+        { error: "Document not found." },
+        { status: 404 },
+      );
     return NextResponse.json({ document: result.rows[0] });
   } catch (error) {
     return databaseError("Unable to load document.", error);
@@ -34,8 +46,16 @@ export async function GET(request: Request, context: RouteContext) {
 export async function DELETE(request: Request, context: RouteContext) {
   const auth = await authenticateRequest(request);
   if (isResponse(auth)) return auth.response;
-  const id = z.coerce.number().int().positive().safeParse((await context.params).id);
-  if (!id.success) return NextResponse.json({ error: "Invalid document ID." }, { status: 400 });
+  const id = z.coerce
+    .number()
+    .int()
+    .positive()
+    .safeParse((await context.params).id);
+  if (!id.success)
+    return NextResponse.json(
+      { error: "Invalid document ID." },
+      { status: 400 },
+    );
   const isAdmin = auth.user.role !== "student";
   const pool = getDatabasePool();
   const client = await pool.connect();
@@ -49,18 +69,26 @@ export async function DELETE(request: Request, context: RouteContext) {
     );
     if (!result.rowCount) {
       await client.query("ROLLBACK");
-      return NextResponse.json({ error: "Document not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Document not found." },
+        { status: 404 },
+      );
     }
 
     await deleteCloudinaryRaw(result.rows[0].cloudinary_public_id);
-    await client.query("DELETE FROM scholarship_documents WHERE id = $1", [id.data]);
+    await client.query("DELETE FROM scholarship_documents WHERE id = $1", [
+      id.data,
+    ]);
     await client.query("COMMIT");
     return NextResponse.json({ success: true });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Unable to delete document.", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Document deletion failed." },
+      {
+        error:
+          error instanceof Error ? error.message : "Document deletion failed.",
+      },
       { status: 503 },
     );
   } finally {

@@ -23,7 +23,10 @@ export async function GET(request: Request) {
        LIMIT $2 OFFSET $3`,
       [auth.user.id, limit, offset],
     );
-    return NextResponse.json({ applications: result.rows, pagination: { page, limit } });
+    return NextResponse.json({
+      applications: result.rows,
+      pagination: { page, limit },
+    });
   } catch (error) {
     return databaseError("Unable to load applications.", error);
   }
@@ -45,7 +48,11 @@ export async function POST(request: Request) {
        WHERE id = $2 AND status = 'published' AND verification_status = 'verified'
        ON CONFLICT (user_id, scholarship_id) DO NOTHING
        RETURNING *`,
-      [auth.user.id, parsed.data.scholarship_id, parsed.data.student_notes ?? null],
+      [
+        auth.user.id,
+        parsed.data.scholarship_id,
+        parsed.data.student_notes ?? null,
+      ],
     );
     if (!inserted.rowCount) {
       const existing = await client.query(
@@ -54,7 +61,11 @@ export async function POST(request: Request) {
       );
       await client.query("ROLLBACK");
       return NextResponse.json(
-        { error: existing.rowCount ? "Application already exists." : "Published scholarship not found." },
+        {
+          error: existing.rowCount
+            ? "Application already exists."
+            : "Published scholarship not found.",
+        },
         { status: existing.rowCount ? 409 : 404 },
       );
     }
@@ -65,7 +76,10 @@ export async function POST(request: Request) {
       [inserted.rows[0].id, inserted.rows[0].status, "Application created"],
     );
     await client.query("COMMIT");
-    return NextResponse.json({ application: inserted.rows[0] }, { status: 201 });
+    return NextResponse.json(
+      { application: inserted.rows[0] },
+      { status: 201 },
+    );
   } catch (error) {
     await client.query("ROLLBACK");
     return databaseError("Unable to create application.", error);

@@ -24,7 +24,9 @@ export async function POST(request: Request) {
       error,
     );
     return NextResponse.json(
-      { error: "Firebase Admin authentication is not configured on the server." },
+      {
+        error: "Firebase Admin authentication is not configured on the server.",
+      },
       { status: 500 },
     );
   }
@@ -34,7 +36,9 @@ export async function POST(request: Request) {
     decodedToken = await firebaseAuth.verifyIdToken(idToken);
   } catch {
     return NextResponse.json(
-      { error: "Unable to verify your Firebase sign-in. Please sign in again." },
+      {
+        error: "Unable to verify your Firebase sign-in. Please sign in again.",
+      },
       { status: 401 },
     );
   }

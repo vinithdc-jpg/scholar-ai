@@ -20,7 +20,8 @@ export async function POST(request: Request) {
       parsed.data.email,
       parsed.data.password,
     );
-    if (!result.idToken) throw new Error("Firebase did not return an ID token.");
+    if (!result.idToken)
+      throw new Error("Firebase did not return an ID token.");
 
     const decoded = await getFirebaseAdminAuth().verifyIdToken(result.idToken);
     if (!decoded.email) {
@@ -54,12 +55,14 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to sign in.",
+        error: error instanceof Error ? error.message : "Unable to sign in.",
       },
-      { status: error instanceof Error && error.message.includes("incorrect") ? 401 : 503 },
+      {
+        status:
+          error instanceof Error && error.message.includes("incorrect")
+            ? 401
+            : 503,
+      },
     );
   }
 }

@@ -17,7 +17,11 @@ export default function SaveScholarshipButton({
     <button
       type="button"
       onClick={() => toggleSaved(scholarshipId)}
-      aria-label={saved ? `Remove ${scholarshipName} from saved scholarships` : `Save ${scholarshipName}`}
+      aria-label={
+        saved
+          ? `Remove ${scholarshipName} from saved scholarships`
+          : `Save ${scholarshipName}`
+      }
       aria-pressed={saved}
       className={`grid size-10 shrink-0 place-items-center rounded-xl border transition ${
         saved

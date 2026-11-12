@@ -12,8 +12,16 @@ const bodySchema = z.object({
 export async function PATCH(request: Request, context: RouteContext) {
   const auth = await requireRoles(request, ["content_admin", "super_admin"]);
   if (isResponse(auth)) return auth.response;
-  const id = z.coerce.number().int().positive().safeParse((await context.params).id);
-  if (!id.success) return NextResponse.json({ error: "Invalid document ID." }, { status: 400 });
+  const id = z.coerce
+    .number()
+    .int()
+    .positive()
+    .safeParse((await context.params).id);
+  if (!id.success)
+    return NextResponse.json(
+      { error: "Invalid document ID." },
+      { status: 400 },
+    );
   const parsed = await readJson(request, bodySchema);
   if (parsed.response) return parsed.response;
 
@@ -29,7 +37,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
     if (!result.rowCount) {
       await client.query("ROLLBACK");
-      return NextResponse.json({ error: "Document not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Document not found." },
+        { status: 404 },
+      );
     }
 
     await client.query(
@@ -40,7 +51,9 @@ export async function PATCH(request: Request, context: RouteContext) {
         auth.user.id,
         `document_${parsed.data.verification_status}`,
         String(id.data),
-        JSON.stringify({ verification_status: parsed.data.verification_status }),
+        JSON.stringify({
+          verification_status: parsed.data.verification_status,
+        }),
       ],
     );
     await client.query("COMMIT");

@@ -1,7 +1,9 @@
 import { Surface } from "@/components/ui";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-[#ddd6fe] ${className}`} />;
+  return (
+    <div className={`animate-pulse rounded-lg bg-[#ddd6fe] ${className}`} />
+  );
 }
 
 export default function WorkspaceLoading() {
@@ -14,10 +16,23 @@ export default function WorkspaceLoading() {
         <Skeleton className="h-3 w-80 max-w-full" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => <Surface key={index} className="space-y-4 p-5"><Skeleton className="h-3 w-28" /><Skeleton className="h-7 w-20" /><Skeleton className="h-2 w-32" /></Surface>)}
+        {Array.from({ length: 4 }, (_, index) => (
+          <Surface key={index} className="space-y-4 p-5">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-7 w-20" />
+            <Skeleton className="h-2 w-32" />
+          </Surface>
+        ))}
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 3 }, (_, index) => <Surface key={index} className="space-y-4 p-5"><Skeleton className="h-11 w-11 rounded-xl" /><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-full" /><Skeleton className="h-10 w-full rounded-xl" /></Surface>)}
+        {Array.from({ length: 3 }, (_, index) => (
+          <Surface key={index} className="space-y-4 p-5">
+            <Skeleton className="h-11 w-11 rounded-xl" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </Surface>
+        ))}
       </div>
     </div>
   );

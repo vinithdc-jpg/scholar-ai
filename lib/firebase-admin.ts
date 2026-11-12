@@ -22,7 +22,7 @@ function readServiceAccount(): ServiceAccountJson {
       credential = JSON.parse(jsonFromEnvironment) as ServiceAccountJson;
     } catch {
       throw new Error(
-        "FIREBASE_SERVICE_ACCOUNT_JSON must contain valid service-account JSON.",
+        "FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON. Set it to the complete Firebase service-account JSON.",
       );
     }
   } else if (credentialPath) {
@@ -30,14 +30,21 @@ function readServiceAccount(): ServiceAccountJson {
       /* turbopackIgnore: true */ process.cwd(),
       credentialPath,
     );
+    let fileContents: string;
 
     try {
-      credential = JSON.parse(
-        readFileSync(absolutePath, "utf8"),
-      ) as ServiceAccountJson;
+      fileContents = readFileSync(absolutePath, "utf8");
     } catch {
       throw new Error(
-        `Unable to read Firebase service-account JSON from FIREBASE_SERVICE_ACCOUNT_PATH (${credentialPath}).`,
+        `Unable to read the Firebase service-account file at "${absolutePath}". Check FIREBASE_SERVICE_ACCOUNT_PATH and ensure the file is deployed with the application.`,
+      );
+    }
+
+    try {
+      credential = JSON.parse(fileContents) as ServiceAccountJson;
+    } catch {
+      throw new Error(
+        `The Firebase service-account file at "${absolutePath}" is not valid JSON.`,
       );
     }
   } else {
@@ -68,7 +75,14 @@ function readServiceAccount(): ServiceAccountJson {
   const clientEmail = credential.client_email ?? credential.clientEmail;
   const privateKey = credential.private_key ?? credential.privateKey;
 
-  if (!projectId || !clientEmail || !privateKey) {
+  if (
+    typeof projectId !== "string" ||
+    !projectId.trim() ||
+    typeof clientEmail !== "string" ||
+    !clientEmail.trim() ||
+    typeof privateKey !== "string" ||
+    !privateKey.trim()
+  ) {
     throw new Error(
       "Firebase service-account credentials must include project_id, client_email, and private_key.",
     );

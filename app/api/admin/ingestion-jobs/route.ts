@@ -15,7 +15,10 @@ export async function GET(request: Request) {
        ORDER BY j.created_at DESC LIMIT $1 OFFSET $2`,
       [limit, offset],
     );
-    return NextResponse.json({ jobs: result.rows, pagination: { page, limit } });
+    return NextResponse.json({
+      jobs: result.rows,
+      pagination: { page, limit },
+    });
   } catch (error) {
     return databaseError("Unable to list ingestion jobs.", error);
   }

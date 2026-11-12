@@ -34,7 +34,11 @@ export async function authenticateRequest(
   let firebaseAuth;
   try {
     firebaseAuth = getFirebaseAdminAuth();
-  } catch {
+  } catch (error) {
+    console.error(
+      "Firebase Admin authentication could not be initialized.",
+      error,
+    );
     return {
       response: NextResponse.json(
         { error: "Firebase Admin authentication is not configured on the server." },

@@ -18,8 +18,11 @@ export async function POST(request: Request) {
   let firebaseAuth: ReturnType<typeof getFirebaseAdminAuth>;
   try {
     firebaseAuth = getFirebaseAdminAuth();
-  } catch {
-    console.error("Firebase Admin authentication could not be initialized.");
+  } catch (error) {
+    console.error(
+      "Firebase Admin authentication could not be initialized.",
+      error,
+    );
     return NextResponse.json(
       { error: "Firebase Admin authentication is not configured on the server." },
       { status: 500 },

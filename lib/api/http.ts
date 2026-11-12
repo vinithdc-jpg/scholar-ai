@@ -51,7 +51,10 @@ export function getPagination(url: URL) {
 export function databaseError(message: string, error: unknown) {
   console.error(message, error);
   return NextResponse.json(
-    { error: "A database operation failed. Check database configuration and migrations." },
+    {
+      error:
+        "A database operation failed. Check database configuration and migrations.",
+    },
     { status: 503 },
   );
 }

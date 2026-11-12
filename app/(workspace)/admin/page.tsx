@@ -123,7 +123,7 @@ export default function AdminPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366f1]">
             ScholarAI operations
           </p>
-          <h1 className="mt-1 text-[27px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[31px]">
+          <h1 className="mt-1 text-[27px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white sm:text-[31px]">
             Admin workspace
           </h1>
           <p className="mt-2 text-[12px] text-[#858c9e]">
@@ -292,7 +292,7 @@ export default function AdminPage() {
               >
                 <div className="flex items-center gap-2.5">
                   <span
-                    className={`grid size-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${scholarship.color} text-[9px] font-bold text-white`}
+                    className={`grid size-8 shrink-0 place-items-center rounded-lg bg-linear-to-br ${scholarship.color} text-[9px] font-bold text-white`}
                   >
                     <GraduationCap size={14} />
                   </span>
@@ -446,7 +446,7 @@ export default function AdminPage() {
                 <Pill tone="blue">2 processing</Pill>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#ede9fe]">
-                <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-[#6366f1] to-[#312e81]" />
+                <div className="h-full w-[68%] rounded-full bg-linear-to-r from-[#6366f1] to-[#312e81]" />
               </div>
               <p className="mt-2 flex items-center gap-1 text-[9px] text-[#9299aa]">
                 <Clock3 size={10} /> Last updated 2 minutes ago

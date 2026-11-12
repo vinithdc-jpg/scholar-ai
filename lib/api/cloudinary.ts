@@ -3,7 +3,11 @@ import { getServerEnv } from "@/lib/env";
 
 function config() {
   const env = getServerEnv();
-  if (!env.CLOUDINARY_CLOUD_NAME || !env.CLOUDINARY_API_KEY || !env.CLOUDINARY_API_SECRET) {
+  if (
+    !env.CLOUDINARY_CLOUD_NAME ||
+    !env.CLOUDINARY_API_KEY ||
+    !env.CLOUDINARY_API_SECRET
+  ) {
     throw new Error("Cloudinary is not configured.");
   }
   return {
@@ -64,7 +68,12 @@ export async function deleteCloudinaryRaw(publicId: string) {
     result?: string;
     error?: { message?: string };
   };
-  if (!response.ok || result.result !== "ok" && result.result !== "not found") {
-    throw new Error(result.error?.message ?? "Cloudinary document deletion failed.");
+  if (
+    !response.ok ||
+    (result.result !== "ok" && result.result !== "not found")
+  ) {
+    throw new Error(
+      result.error?.message ?? "Cloudinary document deletion failed.",
+    );
   }
 }

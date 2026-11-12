@@ -23,7 +23,7 @@ export default function WorkspaceError({
       <h1 className="mt-4 text-[18px] font-bold text-[#0f172a] dark:text-white">
         We couldn’t load this page
       </h1>
-      <p className="mt-2 max-w-[360px] text-[11px] leading-5 text-[#858c9e]">
+      <p className="mt-2 max-w-90 text-[11px] leading-5 text-[#858c9e]">
         Something went wrong while opening this section. Try again, or head back
         to your dashboard.
       </p>

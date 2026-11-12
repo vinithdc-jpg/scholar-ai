@@ -57,11 +57,11 @@ export default function DashboardPage() {
         <div className="absolute -right-10 -top-20 size-60 rounded-full border border-indigo-300/10" />
         <div className="absolute right-16 -top-14 size-44 rounded-full border border-indigo-300/10" />
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-5">
-          <div className="max-w-[620px]">
+          <div className="max-w-155">
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-400/15 px-2.5 py-1 text-[10px] font-semibold text-indigo-200">
               <Sparkles size={12} /> Your student workspace
             </div>
-            <h1 className="text-[27px] font-extrabold tracking-[-0.05em] sm:text-[32px]">
+            <h1 className="text-[27px] font-extrabold tracking-tighter sm:text-[32px]">
               Good morning, Jordan <span aria-hidden="true">✦</span>
             </h1>
             <p className="mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px]">
@@ -96,7 +96,7 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className="mt-3 flex items-end justify-between gap-2">
-              <p className="text-[27px] font-extrabold leading-none tracking-[-0.05em] text-[#0f172a] dark:text-white">
+              <p className="text-[27px] font-extrabold leading-none tracking-tighter text-[#0f172a] dark:text-white">
                 {value}
               </p>
               <span className="flex items-center gap-1 text-[10px] font-medium text-[#312e81]">
@@ -228,7 +228,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <Surface className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#f5f3ff] to-white p-5 sm:px-6">
+      <Surface className="flex flex-wrap items-center justify-between gap-4 bg-linear-to-r from-[#f5f3ff] to-white p-5 sm:px-6">
         <div className="flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-xl bg-[#e0e7ff] text-[#6366f1]">
             <CheckCircle2 size={19} />

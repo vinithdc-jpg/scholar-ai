@@ -75,7 +75,7 @@ export default function AssistantPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366f1]">
             Your scholarship sidekick
           </p>
-          <h1 className="mt-1 text-[27px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[31px]">
+          <h1 className="mt-1 text-[27px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white sm:text-[31px]">
             Ask ScholarAI
           </h1>
           <p className="mt-2 text-[12px] text-[#858c9e]">
@@ -91,10 +91,10 @@ export default function AssistantPage() {
         </button>
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
-        <Surface className="flex min-h-[570px] flex-col overflow-hidden">
+        <Surface className="flex min-h-142.5 flex-col overflow-hidden">
           <div className="flex items-center justify-between border-b border-[#ddd6fe] px-4 py-3.5 sm:px-5">
             <div className="flex items-center gap-3">
-              <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#312e81] text-white">
+              <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-[#6366f1] to-[#312e81] text-white">
                 <Bot size={19} />
               </span>
               <div>
@@ -240,7 +240,7 @@ export default function AssistantPage() {
               ))}
             </div>
           </Surface>
-          <Surface className="bg-gradient-to-br from-[#e0e7ff] to-white p-4">
+          <Surface className="bg-linear-to-br from-[#e0e7ff] to-white p-4">
             <span className="grid size-8 place-items-center rounded-lg bg-white text-[#6366f1] shadow-sm">
               <Sparkles size={16} />
             </span>

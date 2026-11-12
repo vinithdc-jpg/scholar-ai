@@ -26,7 +26,7 @@ export default function EligibilityPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1050px]">
+    <div className="mx-auto max-w-262.5">
       <div className="text-center">
         <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#e0e7ff] text-[#6366f1]">
           <Target size={21} />
@@ -34,16 +34,16 @@ export default function EligibilityPage() {
         <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6366f1]">
           A little clarity goes a long way
         </p>
-        <h1 className="mt-2 text-[27px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[32px]">
+        <h1 className="mt-2 text-[27px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white sm:text-[32px]">
           Check your scholarship fit
         </h1>
-        <p className="mx-auto mt-2 max-w-[510px] text-[12px] leading-5 text-[#858c9e]">
+        <p className="mx-auto mt-2 max-w-127.5 text-[12px] leading-5 text-[#858c9e]">
           Share a few details to see how your profile lines up with our sample
           opportunities.
         </p>
       </div>
 
-      <div className="mx-auto mt-7 grid max-w-[900px] gap-5 lg:grid-cols-[1fr_0.85fr]">
+      <div className="mx-auto mt-7 grid max-w-225 gap-5 lg:grid-cols-[1fr_0.85fr]">
         <Surface className="p-5 sm:p-7">
           <h2 className="text-[15px] font-bold text-[#0f172a] dark:text-white">
             About your studies
@@ -202,14 +202,14 @@ export default function EligibilityPage() {
               </Link>
             </Surface>
           ) : (
-            <Surface className="flex min-h-[250px] flex-col items-center justify-center px-6 py-10 text-center">
+            <Surface className="flex min-h-62.5 flex-col items-center justify-center px-6 py-10 text-center">
               <span className="grid size-12 place-items-center rounded-2xl bg-[#e0e7ff] text-[#6366f1]">
                 <GraduationCap size={22} />
               </span>
               <h2 className="mt-4 text-[14px] font-bold text-[#0f172a] dark:text-white">
                 Your results will appear here
               </h2>
-              <p className="mt-2 max-w-[260px] text-[10px] leading-5 text-[#8c93a4]">
+              <p className="mt-2 max-w-65 text-[10px] leading-5 text-[#8c93a4]">
                 Complete the form to see a transparent, sample eligibility
                 check.
               </p>

@@ -53,7 +53,7 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
   if (!scholarship) notFound();
 
   return (
-    <div className="mx-auto max-w-[1050px]">
+    <div className="mx-auto max-w-262.5">
       <Link
         href="/scholarships"
         className="mb-5 inline-flex items-center gap-2 text-[11px] font-semibold text-[#767e91] hover:text-[#6366f1]"
@@ -63,12 +63,12 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
       <div className="grid gap-5 lg:grid-cols-[1fr_310px]">
         <div className="space-y-5">
           <Surface className="overflow-hidden">
-            <div className={`h-2 bg-gradient-to-r ${scholarship.color}`} />
+            <div className={`h-2 bg-linear-to-r ${scholarship.color}`} />
             <div className="p-5 sm:p-7">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
                   <div
-                    className={`grid size-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${scholarship.color} text-[13px] font-bold text-white`}
+                    className={`grid size-14 shrink-0 place-items-center rounded-2xl bg-linear-to-br ${scholarship.color} text-[13px] font-bold text-white`}
                   >
                     {scholarship.initials}
                   </div>
@@ -76,7 +76,7 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                     <p className="text-[11px] text-[#949bad]">
                       {scholarship.provider}
                     </p>
-                    <h1 className="mt-1 text-[23px] font-extrabold leading-tight tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[28px]">
+                    <h1 className="mt-1 text-[23px] font-extrabold leading-tight tracking-tighter text-[#0f172a] dark:text-white sm:text-[28px]">
                       {scholarship.name}
                     </h1>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -220,7 +220,7 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-[#9299aa]">Award value</p>
-                <p className="mt-1 text-[30px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white">
+                <p className="mt-1 text-[30px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white">
                   {scholarship.amount}
                 </p>
               </div>

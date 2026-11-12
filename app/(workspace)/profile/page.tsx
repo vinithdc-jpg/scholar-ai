@@ -23,12 +23,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1000px]">
+    <div className="mx-auto max-w-250">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366f1]">
           Your details, your direction
         </p>
-        <h1 className="mt-1 text-[27px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[31px]">
+        <h1 className="mt-1 text-[27px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white sm:text-[31px]">
           My profile
         </h1>
         <p className="mt-2 text-[12px] text-[#858c9e]">
@@ -39,7 +39,7 @@ export default function ProfilePage() {
         <aside className="space-y-4">
           <Surface className="p-5">
             <div className="flex items-center gap-3">
-              <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#312e81] text-[16px] font-bold text-white">
+              <span className="grid size-14 place-items-center rounded-2xl bg-linear-to-br from-[#6366f1] to-[#312e81] text-[16px] font-bold text-white">
                 JD
               </span>
               <div>

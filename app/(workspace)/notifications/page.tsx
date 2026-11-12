@@ -51,13 +51,13 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[950px]">
+    <div className="mx-auto max-w-237.5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366f1]">
             Stay in the know
           </p>
-          <h1 className="mt-1 text-[27px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[31px]">
+          <h1 className="mt-1 text-[27px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white sm:text-[31px]">
             Notifications
           </h1>
           <p className="mt-2 text-[12px] text-[#858c9e]">
@@ -162,7 +162,7 @@ export default function NotificationsPage() {
                 className={`relative h-5 w-9 rounded-full transition ${emailReminders ? "bg-[#6366f1]" : "bg-[#d5d8e1]"}`}
               >
                 <span
-                  className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-all ${emailReminders ? "left-[18px]" : "left-0.5"}`}
+                  className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-all ${emailReminders ? "left-4.5" : "left-0.5"}`}
                 />
               </button>
             </div>
@@ -180,7 +180,7 @@ export default function NotificationsPage() {
               </span>
             </div>
           </Surface>
-          <Surface className="mt-4 bg-gradient-to-br from-[#e0e7ff] to-white p-4">
+          <Surface className="mt-4 bg-linear-to-br from-[#e0e7ff] to-white p-4">
             <p className="flex items-center gap-2 text-[10px] font-bold text-[#0f172a] dark:text-white">
               <CalendarDays size={14} className="text-[#6366f1]" /> Coming up
             </p>

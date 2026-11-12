@@ -29,7 +29,7 @@ export default function ApplicationsPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366f1]">
             Your progress, all in one place
           </p>
-          <h1 className="mt-1 text-[27px] font-extrabold tracking-[-0.05em] text-[#0f172a] dark:text-white sm:text-[31px]">
+          <h1 className="mt-1 text-[27px] font-extrabold tracking-tighter text-[#0f172a] dark:text-white sm:text-[31px]">
             Application tracker
           </h1>
           <p className="mt-2 text-[12px] text-[#858c9e]">

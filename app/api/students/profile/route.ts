@@ -24,7 +24,12 @@ export async function GET(request: Request) {
 
   try {
     const result = await getDatabasePool().query(
-      "SELECT * FROM student_profiles WHERE user_id = $1",
+      `SELECT id, user_id, date_of_birth::text AS date_of_birth,
+              state, district, category, gender, education_level, course,
+              institution, academic_year, family_income, percentage,
+              created_at, updated_at
+       FROM student_profiles
+       WHERE user_id = $1`,
       [auth.user.id],
     );
     return NextResponse.json({ profile: result.rows[0] ?? null });
@@ -63,7 +68,10 @@ export async function PUT(request: Request) {
        ON CONFLICT (user_id) DO UPDATE SET
          ${fields.map((field) => `${field} = EXCLUDED.${field}`).join(", ")},
          updated_at = CURRENT_TIMESTAMP
-       RETURNING *`,
+       RETURNING id, user_id, date_of_birth::text AS date_of_birth,
+                 state, district, category, gender, education_level, course,
+                 institution, academic_year, family_income, percentage,
+                 created_at, updated_at`,
       [auth.user.id, ...values],
     );
     return NextResponse.json({ profile: result.rows[0] });

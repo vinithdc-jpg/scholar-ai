@@ -228,7 +228,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <Surface className="flex flex-wrap items-center justify-between gap-4 bg-linear-to-r from-[#f5f3ff] to-white p-5 sm:px-6">
+      <Surface className="flex flex-wrap items-center justify-between gap-4 bg-linear-to-r from-[#f5f3ff] to-white p-5 sm:px-6 dark:from-[#17172f] dark:to-[#17172f]">
         <div className="flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-xl bg-[#e0e7ff] text-[#6366f1]">
             <CheckCircle2 size={19} />

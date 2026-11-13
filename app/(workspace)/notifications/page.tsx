@@ -180,7 +180,7 @@ export default function NotificationsPage() {
               </span>
             </div>
           </Surface>
-          <Surface className="mt-4 bg-linear-to-br from-[#e0e7ff] to-white p-4">
+          <Surface className="mt-4 bg-linear-to-br from-[#e0e7ff] to-white p-4 dark:from-[#17172f] dark:to-[#17172f]">
             <p className="flex items-center gap-2 text-[10px] font-bold text-[#0f172a] dark:text-white">
               <CalendarDays size={14} className="text-[#6366f1]" /> Coming up
             </p>

@@ -113,8 +113,8 @@ a {
 
 .dark a.bg-white,
 .dark button.bg-white {
-  background-color: #f5f3ff !important;
-  color: #312e81 !important;
+  background-color: var(--surface) !important;
+  color: var(--foreground) !important;
 }
 
 .dark [class~="bg-[#f5f3ff]"] {
@@ -122,7 +122,8 @@ a {
 }
 
 .dark [class~="bg-[#e0e7ff]"],
-.dark [class~="bg-[#eef2ff]"] {
+.dark [class~="bg-[#eef2ff]"],
+.dark [class~="bg-[#f1f5f9]"] {
   background-color: var(--brand-soft) !important;
 }
 

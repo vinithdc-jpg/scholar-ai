@@ -240,7 +240,7 @@ export default function AssistantPage() {
               ))}
             </div>
           </Surface>
-          <Surface className="bg-linear-to-br from-[#e0e7ff] to-white p-4">
+          <Surface className="bg-linear-to-br from-[#e0e7ff] to-white p-4 dark:from-[#17172f] dark:to-[#17172f]">
             <span className="grid size-8 place-items-center rounded-lg bg-white text-[#6366f1] shadow-sm">
               <Sparkles size={16} />
             </span>

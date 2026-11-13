@@ -128,16 +128,19 @@ are illustrative.
 ### Authentication
 
 `POST /api/auth/register` accepts `{ "email", "password", "name" }`, creates a
-Firebase email/password user, saves the display name, and synchronizes the
-PostgreSQL profile. It returns the user and Firebase ID/refresh tokens.
+Firebase email/password user, saves the display name with Firebase Admin, and
+synchronizes the PostgreSQL profile. It returns the user and refreshed Firebase
+ID/refresh tokens so the token includes the saved display name. Configure valid
+Firebase Admin credentials for registration.
 
 `POST /api/auth/login` accepts `{ "email", "password" }` and returns the
 Firebase tokens and synchronized user profile.
 
 `POST /api/auth/logout` requires a Bearer token and revokes Firebase refresh
-tokens. The client should also call Firebase client `signOut()` to clear its
-local auth state. Existing ID tokens remain valid until expiry unless server
-verification is configured to check revocation.
+tokens. The client calls this endpoint and then Firebase client `signOut()` to
+clear its local auth state. Protected API routes check token revocation, so
+previously issued tokens are rejected after logout. This adds a Firebase
+revocation check to protected requests.
 
 `GET /api/auth/me` requires a Bearer token and returns `{ "user": ... }`.
 

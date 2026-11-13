@@ -12,17 +12,39 @@ export async function POST(request: Request) {
     );
   }
 
+  let adminAuth: ReturnType<typeof getFirebaseAdminAuth>;
   try {
-    const adminAuth = getFirebaseAdminAuth();
-    const decoded = await adminAuth.verifyIdToken(token);
-    await adminAuth.revokeRefreshTokens(decoded.uid);
-    return NextResponse.json({ success: true });
+    adminAuth = getFirebaseAdminAuth();
+  } catch (error) {
+    console.error("Firebase Admin authentication could not be initialized.", error);
+    return NextResponse.json(
+      { error: "Firebase Admin authentication is not configured on the server." },
+      { status: 503 },
+    );
+  }
+
+  let decoded;
+  try {
+    decoded = await adminAuth.verifyIdToken(token);
   } catch {
     return NextResponse.json(
       {
         error: "Unable to verify your Firebase sign-in. Please sign in again.",
       },
       { status: 401 },
+    );
+  }
+
+  try {
+    await adminAuth.revokeRefreshTokens(decoded.uid);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Unable to revoke Firebase refresh tokens.", error);
+    return NextResponse.json(
+      {
+        error: "Unable to revoke your Firebase session.",
+      },
+      { status: 503 },
     );
   }
 }

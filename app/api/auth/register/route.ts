@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { readJson } from "@/lib/api/http";
-import {
-  firebasePasswordAuth,
-  setFirebaseDisplayName,
-} from "@/lib/api/firebase-rest";
+import { firebasePasswordAuth } from "@/lib/api/firebase-rest";
 import { getDatabasePool } from "@/lib/db";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 
@@ -25,21 +22,34 @@ export async function POST(request: Request) {
       parsed.data.email,
       parsed.data.password,
     );
-    if (!authResult.idToken)
-      throw new Error("Firebase did not return an ID token.");
+    if (!authResult.idToken || !authResult.localId) {
+      throw new Error("Firebase did not return a complete account result.");
+    }
     createdUid = authResult.localId;
 
-    const namedAuthResult = await setFirebaseDisplayName(
-      authResult.idToken,
-      parsed.data.name,
+    try {
+      await getFirebaseAdminAuth().updateUser(createdUid, {
+        displayName: parsed.data.name,
+      });
+    } catch (error) {
+      console.error("Firebase could not save the account display name.", error);
+      throw new Error(
+        "Firebase could not save the account display name. Check Firebase Admin credentials and permissions.",
+      );
+    }
+
+    const namedAuthResult = await firebasePasswordAuth(
+      "signInWithPassword",
+      parsed.data.email,
+      parsed.data.password,
     );
     if (
       !namedAuthResult.idToken ||
-      !namedAuthResult.localId ||
+      namedAuthResult.localId !== createdUid ||
       !namedAuthResult.email
     ) {
       throw new Error(
-        "Firebase did not return a complete registration result.",
+        "Firebase did not return a complete sign-in result after registration.",
       );
     }
 
@@ -98,7 +108,8 @@ export async function POST(request: Request) {
     }
     const status = message.includes("already exists")
       ? 409
-      : message.includes("not configured")
+      : message.includes("not configured") ||
+          message.includes("Firebase Admin credentials and permissions")
         ? 503
         : 400;
     return NextResponse.json({ error: message }, { status });

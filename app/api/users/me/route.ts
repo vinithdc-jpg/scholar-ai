@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   let decodedToken;
   try {
-    decodedToken = await firebaseAuth.verifyIdToken(idToken);
+    decodedToken = await firebaseAuth.verifyIdToken(idToken, true);
   } catch {
     return NextResponse.json(
       {

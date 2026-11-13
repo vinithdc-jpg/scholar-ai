@@ -49,30 +49,3 @@ export async function firebasePasswordAuth(
 
   return result;
 }
-
-export async function setFirebaseDisplayName(
-  idToken: string,
-  displayName: string,
-) {
-  const apiKey = getServerEnv().NEXT_PUBLIC_FIREBASE_API_KEY;
-  if (!apiKey) throw new Error("Firebase client API key is not configured.");
-
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:update?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idToken,
-        displayName,
-        returnSecureToken: true,
-      }),
-      cache: "no-store",
-    },
-  );
-  const result = (await response.json()) as IdentityToolkitResponse;
-  if (!response.ok || !result.idToken) {
-    throw new Error("Firebase could not save the account display name.");
-  }
-  return result;
-}

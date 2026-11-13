@@ -49,7 +49,7 @@ export async function authenticateRequest(
 
   let decodedToken;
   try {
-    decodedToken = await firebaseAuth.verifyIdToken(idToken);
+    decodedToken = await firebaseAuth.verifyIdToken(idToken, true);
   } catch {
     return {
       response: NextResponse.json(

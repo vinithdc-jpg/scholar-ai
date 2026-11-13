@@ -41,7 +41,40 @@ export const googleLogin = async () => {
 
 // Logout
 export const logoutUser = async () => {
+  let revocationError: unknown;
+  const user = auth.currentUser;
+
+  if (user) {
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const result = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          result?.error ?? "Unable to revoke your Firebase session.",
+        );
+      }
+    } catch (error) {
+      revocationError = error;
+    }
+  }
+
   await signOut(auth);
+
+  if (revocationError) {
+    throw revocationError instanceof Error
+      ? revocationError
+      : new Error("Unable to revoke your Firebase session.");
+  }
 };
 
 export const syncUserProfile = async (user: User) => {

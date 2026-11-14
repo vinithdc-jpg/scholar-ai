@@ -6,13 +6,17 @@ export type Scholarship = {
   deadline: string;
   daysLeft: number;
   category: string;
-  match: number;
+  match?: number;
   description: string;
   color: string;
   initials: string;
   eligibility: string[];
   benefits: string[];
   documents: string[];
+  officialApplicationUrl?: string;
+  officialSourceUrl?: string;
+  location?: string;
+  isCommunitySubmitted?: boolean;
 };
 
 export const scholarships: Scholarship[] = [

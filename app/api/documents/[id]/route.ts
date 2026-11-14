@@ -44,7 +44,7 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
   const id = z.coerce
     .number()

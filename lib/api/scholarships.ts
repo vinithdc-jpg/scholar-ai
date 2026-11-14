@@ -51,7 +51,7 @@ export function normalizeScholarshipInput(
     input.education_levels ?? [],
     input.eligible_courses ?? [],
     input.eligible_states ?? [],
-    input.benefits ?? [],
+    JSON.stringify(input.benefits ?? []),
     input.amount ?? null,
     input.income_limit ?? null,
     input.application_start_date ?? null,

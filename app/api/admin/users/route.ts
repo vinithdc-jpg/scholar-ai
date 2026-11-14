@@ -5,7 +5,6 @@ import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { isResponse, requireRoles } from "@/lib/api/auth";
 import { databaseError, readJson } from "@/lib/api/http";
 import { getDatabasePool } from "@/lib/db";
-import { getSuperAdminEmail } from "@/lib/super-admin";
 
 const createAdminSchema = z.object({
   email: z.string().trim().email().max(255),
@@ -14,15 +13,16 @@ const createAdminSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const auth = await requireRoles(request, ["super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
 
   try {
     const result = await getDatabasePool().query(
-      `SELECT id, email, full_name, role, created_at
+      `SELECT id, email, full_name, id = $1 AS is_current
        FROM users
-       WHERE role IN ('content_admin', 'super_admin')
-       ORDER BY role, full_name, email`,
+       WHERE role = 'content_admin'
+       ORDER BY full_name, email`,
+      [auth.user.id],
     );
     return NextResponse.json({ admins: result.rows });
   } catch (error) {
@@ -31,18 +31,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireRoles(request, ["super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
 
   const parsed = await readJson(request, createAdminSchema);
   if (parsed.response) return parsed.response;
-
-  if (parsed.data.email.toLowerCase() === getSuperAdminEmail()) {
-    return NextResponse.json(
-      { error: "The configured super-admin account cannot be changed here." },
-      { status: 409 },
-    );
-  }
 
   let firebaseAuth: ReturnType<typeof getFirebaseAdminAuth>;
   try {
@@ -105,7 +98,7 @@ export async function POST(request: Request) {
         auth.user.id,
         firebaseUser.uid,
         JSON.stringify({
-          email: parsed.data.email,
+          email: parsed.data.email.toLowerCase(),
           role: "content_admin",
         }),
       ],

@@ -31,7 +31,7 @@ type AdminAccount = {
   id: number | string;
   email: string;
   full_name: string | null;
-  role: "content_admin" | "super_admin";
+  is_current: boolean;
 };
 
 async function adminRequest(path: string, init: RequestInit = {}) {
@@ -48,9 +48,9 @@ async function adminRequest(path: string, init: RequestInit = {}) {
   return fetch(path, { ...init, headers, cache: "no-store" });
 }
 
-async function responseError<T extends Record<string, unknown> = Record<string, unknown>>(
-  response: Response,
-): Promise<T & { error?: string }> {
+async function responseError<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(response: Response): Promise<T & { error?: string }> {
   const result = (await response.json()) as T & { error?: string };
   if (!response.ok) {
     throw new Error(result.error ?? "The request could not be completed.");
@@ -58,12 +58,12 @@ async function responseError<T extends Record<string, unknown> = Record<string, 
   return result;
 }
 
-async function fetchAdminData(isSuperAdmin: boolean) {
+async function fetchAdminData() {
   const [scholarshipResponse, documentResponse, adminResponse] =
     await Promise.all([
       adminRequest("/api/admin/scholarships?limit=100"),
       adminRequest("/api/admin/documents?limit=30"),
-      isSuperAdmin ? adminRequest("/api/admin/users") : Promise.resolve(null),
+      adminRequest("/api/admin/users"),
     ]);
   const scholarshipResult = await responseError<{
     scholarships?: AdminScholarship[];
@@ -71,36 +71,34 @@ async function fetchAdminData(isSuperAdmin: boolean) {
   const documentResult = await responseError<{
     documents?: AdminDocument[];
   }>(documentResponse);
-  const adminResult = adminResponse
-    ? await responseError<{ admins?: AdminAccount[] }>(adminResponse)
-    : null;
-
+  const adminResult = await responseError<{ admins?: AdminAccount[] }>(
+    adminResponse,
+  );
   if (!Array.isArray(scholarshipResult.scholarships)) {
     throw new Error("The scholarship list response is invalid.");
   }
   if (!Array.isArray(documentResult.documents)) {
     throw new Error("The document list response is invalid.");
   }
-  if (isSuperAdmin && (!adminResult || !Array.isArray(adminResult.admins))) {
+  if (!Array.isArray(adminResult.admins)) {
     throw new Error("The admin account list response is invalid.");
   }
-
   return {
     scholarships: scholarshipResult.scholarships,
     documents: documentResult.documents,
-    admins: adminResult?.admins ?? [],
+    admins: adminResult.admins,
   };
 }
 
 export default function AdminPage() {
   const { role, isRoleLoading } = useWorkspaceRole();
-  const isAdmin = role === "content_admin" || role === "super_admin";
-  const isSuperAdmin = role === "super_admin";
+  const isAdmin = role === "content_admin";
   const [scholarships, setScholarships] = useState<AdminScholarship[]>([]);
   const [documents, setDocuments] = useState<AdminDocument[]>([]);
   const [admins, setAdmins] = useState<AdminAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [revokingAdminId, setRevokingAdminId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [formOpen, setFormOpen] = useState(false);
@@ -108,7 +106,7 @@ export default function AdminPage() {
 
   const loadAdminData = useCallback(async () => {
     try {
-      const data = await fetchAdminData(isSuperAdmin);
+      const data = await fetchAdminData();
       setScholarships(data.scholarships);
       setDocuments(data.documents);
       setAdmins(data.admins);
@@ -119,7 +117,7 @@ export default function AdminPage() {
       );
       setIsLoading(false);
     }
-  }, [isSuperAdmin]);
+  }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -127,7 +125,7 @@ export default function AdminPage() {
 
     async function load() {
       try {
-        const data = await fetchAdminData(isSuperAdmin);
+        const data = await fetchAdminData();
         if (!active) return;
         setScholarships(data.scholarships);
         setDocuments(data.documents);
@@ -146,7 +144,7 @@ export default function AdminPage() {
     return () => {
       active = false;
     };
-  }, [isAdmin, isSuperAdmin]);
+  }, [isAdmin]);
 
   async function handleScholarshipSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -210,7 +208,9 @@ export default function AdminPage() {
       await loadAdminData();
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to archive scholarship.",
+        error instanceof Error
+          ? error.message
+          : "Unable to archive scholarship.",
       );
     }
   }
@@ -296,7 +296,9 @@ export default function AdminPage() {
       await loadAdminData();
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to grant admin access.",
+        error instanceof Error
+          ? error.message
+          : "Unable to grant admin access.",
       );
     } finally {
       setIsSaving(false);
@@ -306,6 +308,7 @@ export default function AdminPage() {
   async function revokeAdminAccess(admin: AdminAccount) {
     setErrorMessage("");
     setStatusMessage("");
+    setRevokingAdminId(String(admin.id));
     try {
       const response = await adminRequest(`/api/admin/users/${admin.id}`, {
         method: "PATCH",
@@ -316,8 +319,12 @@ export default function AdminPage() {
       await loadAdminData();
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to revoke admin access.",
+        error instanceof Error
+          ? error.message
+          : "Unable to revoke admin access.",
       );
+    } finally {
+      setRevokingAdminId(null);
     }
   }
 
@@ -363,18 +370,22 @@ export default function AdminPage() {
             Manage scholarship information and verify its source documents.
           </p>
         </div>
-        <Pill tone="blue">
-          {role === "super_admin" ? "Super Admin" : "Admin"}
-        </Pill>
+        <Pill tone="blue">Admin</Pill>
       </div>
 
       {errorMessage && (
-        <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+        <p
+          className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          role="alert"
+        >
           {errorMessage}
         </p>
       )}
       {statusMessage && (
-        <p className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4338ca]" role="status">
+        <p
+          className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4338ca]"
+          role="status"
+        >
           {statusMessage}
         </p>
       )}
@@ -469,7 +480,9 @@ export default function AdminPage() {
                 <input
                   name="application_deadline"
                   type="date"
-                  defaultValue={editing?.application_deadline?.slice(0, 10) ?? ""}
+                  defaultValue={
+                    editing?.application_deadline?.slice(0, 10) ?? ""
+                  }
                   className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
                 />
               </label>
@@ -706,88 +719,89 @@ export default function AdminPage() {
         </Surface>
       </section>
 
-      {isSuperAdmin && (
-        <section>
-          <div className="mb-4">
-            <h2 className="text-[14px] font-bold text-[#0f172a] dark:text-white">
-              Admin accounts
-            </h2>
-            <p className="mt-1 text-[10px] text-[#9299aa]">
-              Create Firebase admin accounts or revoke existing admin access.
-              Share temporary passwords securely and never reuse passwords.
-            </p>
-          </div>
-          <Surface className="p-4 sm:p-5">
-            <form
-              onSubmit={createAdminAccount}
-              className="grid gap-3 sm:grid-cols-2"
+      <section>
+        <div className="mb-4">
+          <h2 className="text-[14px] font-bold text-[#0f172a] dark:text-white">
+            Admin accounts
+          </h2>
+          <p className="mt-1 text-[10px] text-[#9299aa]">
+            Add admins or revoke another admin&apos;s access. You cannot revoke
+            your own access or the last admin account.
+          </p>
+        </div>
+        <Surface className="p-4 sm:p-5">
+          <form
+            onSubmit={createAdminAccount}
+            className="grid gap-3 sm:grid-cols-2"
+          >
+            <input
+              name="full_name"
+              type="text"
+              required
+              maxLength={255}
+              placeholder="Admin name"
+              className="workspace-input h-10 min-w-0 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+            />
+            <input
+              name="email"
+              type="email"
+              required
+              maxLength={255}
+              placeholder="admin@example.com"
+              className="workspace-input h-10 min-w-0 flex-1 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+            />
+            <input
+              name="password"
+              type="password"
+              required
+              minLength={12}
+              maxLength={128}
+              autoComplete="new-password"
+              placeholder="Temporary password (12+ characters)"
+              className="workspace-input h-10 min-w-0 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a] sm:col-span-2"
+            />
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="rounded-xl bg-[#6366f1] px-4 py-2 text-[10px] font-bold text-white disabled:opacity-60 sm:col-span-2 sm:justify-self-end"
             >
-              <input
-                name="full_name"
-                type="text"
-                required
-                maxLength={255}
-                placeholder="Admin name"
-                className="workspace-input h-10 min-w-0 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
-              />
-              <input
-                name="email"
-                type="email"
-                required
-                maxLength={255}
-                placeholder="admin@example.com"
-                className="workspace-input h-10 min-w-0 flex-1 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
-              />
-              <input
-                name="password"
-                type="password"
-                required
-                minLength={12}
-                maxLength={128}
-                autoComplete="new-password"
-                placeholder="Temporary password (12+ characters)"
-                className="workspace-input h-10 min-w-0 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a] sm:col-span-2"
-              />
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="rounded-xl bg-[#6366f1] px-4 py-2 text-[10px] font-bold text-white disabled:opacity-60 sm:col-span-2 sm:justify-self-end"
+              {isSaving ? "Creating…" : "Create admin account"}
+            </button>
+          </form>
+          <div className="mt-4 divide-y divide-[#ddd6fe]">
+            {admins.map((admin) => (
+              <div
+                key={admin.id}
+                className="flex flex-wrap items-center gap-3 py-3"
               >
-                {isSaving ? "Creating…" : "Create admin account"}
-              </button>
-            </form>
-            <div className="mt-4 divide-y divide-[#ddd6fe]">
-              {admins.map((admin) => (
-                <div
-                  key={admin.id}
-                  className="flex flex-wrap items-center gap-3 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-semibold text-[#0f172a] dark:text-white">
-                      {admin.full_name ?? admin.email}
-                    </p>
-                    <p className="truncate text-[10px] text-[#858c9e]">
-                      {admin.email}
-                    </p>
-                  </div>
-                  <Pill tone={admin.role === "super_admin" ? "green" : "blue"}>
-                    {admin.role === "super_admin" ? "Super Admin" : "Admin"}
-                  </Pill>
-                  {admin.role === "content_admin" && (
-                    <button
-                      type="button"
-                      onClick={() => revokeAdminAccess(admin)}
-                      className="rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[10px] font-semibold text-[#7b8295]"
-                    >
-                      Revoke access
-                    </button>
-                  )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold text-[#0f172a] dark:text-white">
+                    {admin.full_name ?? admin.email}
+                  </p>
+                  <p className="truncate text-[10px] text-[#858c9e]">
+                    {admin.email}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </Surface>
-        </section>
-      )}
+                <Pill tone="blue">
+                  {admin.is_current ? "You · Admin" : "Admin"}
+                </Pill>
+                {!admin.is_current && (
+                  <button
+                    type="button"
+                    onClick={() => revokeAdminAccess(admin)}
+                    disabled={revokingAdminId !== null}
+                    className="rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[10px] font-semibold text-[#7b8295] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {revokingAdminId === String(admin.id)
+                      ? "Revoking…"
+                      : "Revoke access"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Surface>
+      </section>
     </div>
   );
 }

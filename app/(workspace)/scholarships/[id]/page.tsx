@@ -19,6 +19,12 @@ import {
 } from "lucide-react";
 import { Pill, Surface } from "@/components/ui";
 import { scholarships } from "@/lib/sample-data";
+import { getDatabasePool } from "@/lib/db";
+import { scholarshipFields } from "@/lib/api/scholarships";
+import {
+  toScholarshipDisplay,
+  type ScholarshipRecord,
+} from "@/lib/scholarship-display";
 
 type ScholarshipDetailsProps = {
   params: Promise<{ id: string }>;
@@ -49,7 +55,21 @@ export default function ScholarshipDetailsPage({
 
 async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
   const { id } = await params;
-  const scholarship = scholarships.find((item) => item.id === id);
+  let scholarship = scholarships.find((item) => item.id === id);
+  if (!scholarship && /^\d+$/.test(id)) {
+    const result = await getDatabasePool().query<ScholarshipRecord>(
+      `SELECT id, ${scholarshipFields.join(", ")},
+       submitted_by IS NOT NULL AND verification_status = 'pending' AS is_community_submitted
+       FROM scholarships
+       WHERE id = $1 AND status = 'published'
+         AND (verification_status = 'verified'
+           OR (submitted_by IS NOT NULL AND verification_status = 'pending'))`,
+      [id],
+    );
+    if (result.rows[0]) {
+      scholarship = toScholarshipDisplay(result.rows[0]);
+    }
+  }
   if (!scholarship) notFound();
 
   return (
@@ -80,11 +100,16 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                       {scholarship.name}
                     </h1>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Pill tone="purple">
-                        <Sparkles size={11} className="mr-1" />{" "}
-                        {scholarship.match}% match
-                      </Pill>
+                      {scholarship.match !== undefined && (
+                        <Pill tone="purple">
+                          <Sparkles size={11} className="mr-1" />{" "}
+                          {scholarship.match}% match
+                        </Pill>
+                      )}
                       <Pill>{scholarship.category}</Pill>
+                      {scholarship.isCommunitySubmitted && (
+                        <Pill tone="amber">Community · unverified</Pill>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -128,7 +153,7 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                   <div>
                     <p className="text-[9px] text-[#9ba1b0]">Location</p>
                     <p className="mt-0.5 text-[12px] font-bold text-[#0f172a] dark:text-white">
-                      United States
+                      {scholarship.location ?? "United States"}
                     </p>
                   </div>
                 </div>
@@ -149,8 +174,9 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
               Review these requirements to see whether this opportunity is right
               for you.
             </p>
-            <ul className="mt-4 space-y-3">
-              {scholarship.eligibility.map((item) => (
+            {scholarship.eligibility.length ? (
+              <ul className="mt-4 space-y-3">
+                {scholarship.eligibility.map((item) => (
                 <li
                   key={item}
                   className="flex items-start gap-2.5 text-[12px] text-[#626a7f]"
@@ -161,11 +187,17 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                   />{" "}
                   {item}
                 </li>
-              ))}
-            </ul>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-[12px] text-[#858c9e]">
+                No eligibility details were provided.
+              </p>
+            )}
           </Surface>
 
-          <Surface className="p-5 sm:p-7">
+          {scholarship.benefits.length > 0 && (
+            <Surface className="p-5 sm:p-7">
             <div className="flex items-center gap-2">
               <span className="grid size-8 place-items-center rounded-lg bg-[#fef3c7] text-[#f59e0b]">
                 <Sparkles size={16} />
@@ -185,9 +217,11 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                 </li>
               ))}
             </ul>
-          </Surface>
+            </Surface>
+          )}
 
-          <Surface className="p-5 sm:p-7">
+          {scholarship.documents.length > 0 && (
+            <Surface className="p-5 sm:p-7">
             <div className="flex items-center gap-2">
               <span className="grid size-8 place-items-center rounded-lg bg-[#f2efff] text-[#312e81]">
                 <FileText size={16} />
@@ -212,7 +246,8 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                 </div>
               ))}
             </div>
-          </Surface>
+            </Surface>
+          )}
         </div>
 
         <aside className="space-y-4">
@@ -230,23 +265,40 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
             </div>
             <div className="mt-4 rounded-xl bg-[#fef3c7] p-3.5">
               <p className="flex items-center gap-2 text-[11px] font-bold text-[#8f652b]">
-                <Clock3 size={14} /> Deadline in {scholarship.daysLeft} days
+                <Clock3 size={14} />{" "}
+                {scholarship.daysLeft === Number.MAX_SAFE_INTEGER
+                  ? "No deadline set"
+                  : scholarship.daysLeft < 0
+                    ? "Deadline passed"
+                    : `Deadline in ${scholarship.daysLeft} days`}
               </p>
               <p className="mt-1.5 text-[10px] text-[#a38863]">
-                Apply before {scholarship.deadline}
+                {scholarship.deadline === "No deadline"
+                  ? "Check the provider's source for current dates."
+                  : `Apply before ${scholarship.deadline}`}
               </p>
             </div>
             <a
-              href="https://www.careeronestop.org/Toolkit/Training/find-scholarships.aspx"
+              href={
+                scholarship.officialApplicationUrl ??
+                scholarship.officialSourceUrl ??
+                "https://www.careeronestop.org/Toolkit/Training/find-scholarships.aspx"
+              }
               target="_blank"
               rel="noreferrer"
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6366f1] px-4 py-3 text-[11px] font-bold text-white transition hover:bg-[#312e81]"
             >
-              Find application information <ExternalLink size={14} />
+              {scholarship.officialApplicationUrl
+                ? "Go to application"
+                : "View official source"}{" "}
+              <ExternalLink size={14} />
             </a>
             <p className="mt-2 text-center text-[9px] leading-4 text-[#9ba1b0]">
-              Sample opportunity. Always verify details with the scholarship
-              provider.
+              {scholarship.isCommunitySubmitted
+                ? "Community-submitted and not yet verified. Confirm details with the provider."
+                : scholarship.officialSourceUrl
+                  ? "Confirm current details with the scholarship provider."
+                  : "Sample opportunity. Always verify details with the scholarship provider."}
             </p>
             <button
               type="button"
@@ -265,12 +317,18 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
               awarding organization before applying.
             </p>
             <a
-              href="https://www.careeronestop.org/Toolkit/Training/find-scholarships.aspx"
+              href={
+                scholarship.officialSourceUrl ??
+                "https://www.careeronestop.org/Toolkit/Training/find-scholarships.aspx"
+              }
               target="_blank"
               rel="noreferrer"
               className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold text-[#6366f1] hover:underline"
             >
-              Explore official resources <ArrowUpRight size={12} />
+              {scholarship.officialSourceUrl
+                ? "Visit official source"
+                : "Explore official resources"}{" "}
+              <ArrowUpRight size={12} />
             </a>
           </Surface>
           <Link

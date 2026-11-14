@@ -38,10 +38,15 @@ export default function ScholarshipCard({
         {scholarship.description}
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Pill tone="purple">
-          <Sparkles size={11} className="mr-1" /> {scholarship.match}% match
-        </Pill>
+        {scholarship.match !== undefined && (
+          <Pill tone="purple">
+            <Sparkles size={11} className="mr-1" /> {scholarship.match}% match
+          </Pill>
+        )}
         <Pill>{scholarship.category}</Pill>
+        {scholarship.isCommunitySubmitted && (
+          <Pill tone="amber">Community · unverified</Pill>
+        )}
       </div>
       <div className="my-4 flex items-end justify-between border-t border-[#ddd6fe] pt-4">
         <div>

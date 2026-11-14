@@ -45,7 +45,9 @@ export async function POST(request: Request) {
     const inserted = await client.query(
       `INSERT INTO applications (user_id, scholarship_id, student_notes)
        SELECT $1, id, $3 FROM scholarships
-       WHERE id = $2 AND status = 'published' AND verification_status = 'verified'
+       WHERE id = $2 AND status = 'published'
+         AND (verification_status = 'verified'
+           OR (submitted_by IS NOT NULL AND verification_status = 'pending'))
        ON CONFLICT (user_id, scholarship_id) DO NOTHING
        RETURNING *`,
       [

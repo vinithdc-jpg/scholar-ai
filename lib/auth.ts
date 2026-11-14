@@ -10,11 +10,11 @@ import {
 
 import { auth } from "./firebase";
 
-export type AppRole = "student" | "content_admin" | "super_admin";
+export type AppRole = "student" | "content_admin";
 
 function isAppRole(role: unknown): role is AppRole {
   return (
-    role === "student" || role === "content_admin" || role === "super_admin"
+    role === "student" || role === "content_admin"
   );
 }
 
@@ -48,15 +48,11 @@ export const registerUser = async (
 };
 
 // Login
-export const loginUser = async (
-  email: string,
-  password: string,
-  options: { superAdminOnly?: boolean } = {},
-) => {
+export const loginUser = async (email: string, password: string) => {
   const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, ...options }),
+    body: JSON.stringify({ email, password }),
     cache: "no-store",
   });
   const result = (await response.json()) as {

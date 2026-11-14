@@ -8,7 +8,7 @@ import { getServerEnv } from "@/lib/env";
 const maxFileSize = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
 
   let form: FormData;

@@ -28,6 +28,7 @@ currently implemented API route.
 | Student | `GET` | `/api/students/dashboard` | Implemented |
 | Scholarships | `GET` | `/api/scholarships` | Implemented |
 | Scholarships | `POST` | `/api/scholarships` | Implemented |
+| Scholarships | `POST` | `/api/scholarship-submissions` | Implemented |
 | Scholarships | `GET` | `/api/scholarships/[id]` | Implemented |
 | Scholarships | `PATCH` | `/api/scholarships/[id]` | Implemented |
 | Scholarships | `DELETE` | `/api/scholarships/[id]` | Implemented |
@@ -55,7 +56,9 @@ currently implemented API route.
 | Admin | `POST` | `/api/admin/documents/[id]/ingest` | Route present (worker unavailable) |
 | Admin | `PATCH` | `/api/admin/documents/[id]/verify` | Implemented |
 | Admin | `GET` | `/api/admin/ingestion-jobs` | Implemented |
-| Admin | `GET` | `/api/admin/audit-logs` | Implemented |
+| Admin | `GET` | `/api/admin/users` | Implemented |
+| Admin | `POST` | `/api/admin/users` | Implemented |
+| Admin | `PATCH` | `/api/admin/users/[id]` | Implemented |
 
 `[id]` is a dynamic route segment, replaced with the resource identifier.
 
@@ -133,14 +136,10 @@ synchronizes the PostgreSQL profile. It returns the user and refreshed Firebase
 ID/refresh tokens so the token includes the saved display name. Configure valid
 Firebase Admin credentials for registration.
 
-`POST /api/auth/login` accepts `{ "email", "password" }` and an optional
-`"superAdminOnly": true` flag for the dedicated super-admin page. The endpoint
-verifies credentials with Firebase and, when requested, restricts sign-in to
-the verified configured super-admin email. It returns a Firebase custom token
-and synchronized user profile; the browser exchanges the token with Firebase
-to establish its normal authenticated session. If configured,
-`SUPERADMIN_PASSWORD` is checked server-side and is never included in the
-client bundle.
+`POST /api/auth/login` accepts `{ "email", "password" }`. It verifies
+credentials with Firebase and returns a Firebase custom token and synchronized
+user profile; the browser exchanges the token with Firebase to establish its
+normal authenticated session.
 
 `POST /api/auth/logout` requires a Bearer token and revokes Firebase refresh
 tokens. The client calls this endpoint and then Firebase client `signOut()` to
@@ -161,11 +160,17 @@ application counts plus upcoming verified scholarships.
 
 `GET /api/scholarships` and `/api/scholarships/search` accept `page`, `limit`,
 `q`, `state`, `course`, `education_level`, and `scholarship_type` query
-parameters. Results are published, verified scholarships only. `POST` creates
-scholarships for content admins and super admins. `GET /[id]` reads a published
-scholarship (or any scholarship for admins); `PATCH` updates it; `DELETE`
-archives it. `GET /recommended` uses the signed-in student's profile to rank
-current published scholarships.
+parameters. Results include published, verified scholarships and published
+community submissions that are awaiting verification. Admin operations require
+the `content_admin` role. `POST` creates scholarships.
+`GET /[id]` reads a published scholarship (or any scholarship for admins);
+`PATCH` updates it; `DELETE` archives it. `GET /recommended` uses the signed-in
+student's profile to rank current published scholarships.
+
+`POST /api/scholarship-submissions` lets any signed-in user publish a
+scholarship with an official HTTPS source URL. Submissions appear in the
+catalog immediately and are labeled community-submitted and unverified until
+an admin verifies or rejects them.
 
 `POST /api/eligibility/check` accepts `{ "scholarship_id": number, "profile"?: object }`.
 If `profile` is omitted, the saved profile is used. It returns matched, failed,
@@ -196,9 +201,10 @@ Chat session listing, retrieval, and deletion are implemented. `POST
 citation pipeline is not yet implemented. Document ingestion likewise returns
 `503` until its Redis/BullMQ worker is implemented.
 
-Admin endpoints require a role stored in PostgreSQL (`content_admin` or
-`super_admin`); audit logs are restricted to `super_admin`. Roles supplied by
-the client are never trusted.
+Admin endpoints require the `content_admin` role stored in PostgreSQL. Roles
+supplied by the client are never trusted. Content admins can create other
+content-admin accounts and revoke another admin's access; self-revocation and
+revocation of the final admin are rejected.
 
 List endpoints accept `page` (default `1`) and `limit` (default `20`, maximum
 `100`) unless otherwise specified. Protected endpoints require a valid Firebase

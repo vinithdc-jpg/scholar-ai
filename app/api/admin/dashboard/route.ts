@@ -4,7 +4,7 @@ import { databaseError } from "@/lib/api/http";
 import { getDatabasePool } from "@/lib/db";
 
 export async function GET(request: Request) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
 
   try {

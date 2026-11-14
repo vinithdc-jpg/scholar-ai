@@ -10,7 +10,7 @@ const bodySchema = z.object({
 });
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
   const id = z.coerce
     .number()

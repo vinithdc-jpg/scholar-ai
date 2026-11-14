@@ -53,18 +53,24 @@ const stats = [
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[22px] bg-[#312e81] px-5 py-6 text-white shadow-[0_16px_34px_rgba(15,23,42,0.12)] sm:px-8 sm:py-7">
-        <div className="absolute -right-10 -top-20 size-60 rounded-full border border-indigo-300/10" />
-        <div className="absolute right-16 -top-14 size-44 rounded-full border border-indigo-300/10" />
+      <section className="relative overflow-hidden rounded-[26px] bg-[#312e81] px-5 py-7 text-white shadow-[0_16px_34px_rgba(15,23,42,0.12)] sm:px-8 sm:py-8 lg:px-10 lg:py-9">
+        <div
+          aria-hidden="true"
+          className="absolute -right-10 -top-20 size-60 rounded-full border border-indigo-300/10"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute right-16 -top-14 size-44 rounded-full border border-indigo-300/10"
+        />
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-5">
           <div className="max-w-155">
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-400/15 px-2.5 py-1 text-[10px] font-semibold text-indigo-200">
+            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-400/15 px-3 py-1.5 text-[11px] font-semibold text-indigo-200">
               <Sparkles size={12} /> Your student workspace
             </div>
-            <h1 className="text-[27px] font-extrabold tracking-tighter sm:text-[32px]">
+            <h1 className="text-[30px] font-extrabold leading-tight tracking-tighter sm:text-[36px] lg:text-[40px]">
               Good morning, Jordan <span aria-hidden="true">✦</span>
             </h1>
-            <p className="mt-2 text-[12px] leading-5 text-slate-300 sm:text-[13px]">
+            <p className="mt-3 text-[14px] leading-6 text-slate-300 sm:text-[16px]">
               You have{" "}
               <strong className="font-bold text-white">
                 4 new scholarship matches
@@ -74,7 +80,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/scholarships"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#6366f1] px-4 py-2.5 text-[11px] font-bold text-white shadow-sm shadow-indigo-950/20 transition hover:bg-[#312e81]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#6366f1] px-4 py-3 text-[12px] font-bold text-white shadow-sm shadow-indigo-950/20 transition hover:bg-[#312e81] sm:px-5 sm:text-[13px]"
           >
             Explore matches <ArrowRight size={14} />
           </Link>

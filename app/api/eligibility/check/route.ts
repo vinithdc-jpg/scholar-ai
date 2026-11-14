@@ -60,7 +60,9 @@ export async function POST(request: Request) {
     const [scholarship, profile] = await Promise.all([
       pool.query(
         `SELECT id, name, official_source_url FROM scholarships
-         WHERE id = $1 AND status = 'published' AND verification_status = 'verified'`,
+         WHERE id = $1 AND status = 'published'
+           AND (verification_status = 'verified'
+             OR (submitted_by IS NOT NULL AND verification_status = 'pending'))`,
         [parsed.data.scholarship_id],
       ),
       parsed.data.profile

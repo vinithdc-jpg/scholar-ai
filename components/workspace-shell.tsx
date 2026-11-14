@@ -24,6 +24,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Plus,
   Search,
   Settings2,
   ShieldCheck,
@@ -63,6 +64,7 @@ function getServerThemeSnapshot() {
 const primaryNavigation = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Discover scholarships", href: "/scholarships", icon: Compass },
+  { label: "Add a scholarship", href: "/scholarships/submit", icon: Plus },
   { label: "Saved scholarships", href: "/saved", icon: Bookmark },
   { label: "My applications", href: "/applications", icon: FileCheck2 },
   { label: "Eligibility checker", href: "/eligibility", icon: ShieldCheck },
@@ -281,7 +283,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
               onNavigate={closeMenu}
             />
           ))}
-          {role === "content_admin" || role === "super_admin" ? (
+          {role === "content_admin" ? (
             <Link
               href="/admin"
               onClick={closeMenu}

@@ -34,13 +34,16 @@ Firebase Admin reads credentials from `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBA
 
 The browser obtains tokens with Firebase `user.getIdToken()`, which refreshes expired tokens automatically, and sends them in the `Authorization: Bearer <token>` header.
 
-## Super-admin account
+## Roles and admin access
 
-The default super-admin email is `Admin@gmail.com`; optionally set the server-only `SUPERADMIN_EMAIL` environment variable (or legacy `SUPER_ADMIN_EMAIL`) to use a different Firebase email address. Super admins can sign in at `/super-admin`, where that email is prefilled from the server environment. The account must have a verified email before it receives the `super_admin` role.
+Roles are stored in PostgreSQL and are never accepted from browser input.
+Protected API routes verify Firebase ID tokens and read the user's current
+database role; scholarship and document mutations require the `content_admin`
+role. Content admins can add and revoke other admin accounts in the Admin
+workspace. For safety, admins cannot revoke their own access or remove the
+last remaining admin.
 
-The email/password account must exist in Firebase Authentication. Optionally set `SUPERADMIN_PASSWORD` (or legacy `SUPER_ADMIN_PASSWORD`) as a server-only environment secret; when set, the Firebase-accepted password must also match it. Do not use a `NEXT_PUBLIC_` prefix or commit the secret. Passwords are never stored in PostgreSQL.
-
-Roles are stored in PostgreSQL and are never accepted from browser input. Protected API routes verify Firebase ID tokens and read the user's current database role; scholarship and document mutations require an admin role. Super admins can create Firebase-backed `content_admin` accounts and revoke admin access from the Admin workspace. The account password is sent directly to Firebase Authentication and is not stored in PostgreSQL; use a unique temporary password and share it securely.
+Run `npm run db:migrate` to update existing installations. The migration converts existing `super_admin` accounts to `content_admin` and removes the `super_admin` role from the database constraint.
 
 ## Database and environment setup
 

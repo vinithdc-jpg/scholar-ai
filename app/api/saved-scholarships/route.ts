@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateRequest, isResponse } from "@/lib/api/auth";
 import { databaseError, getPagination, readJson } from "@/lib/api/http";
+import { scholarshipFields } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
 
 const schema = z.object({ scholarship_id: z.number().int().positive() });
@@ -13,7 +14,8 @@ export async function GET(request: Request) {
 
   try {
     const result = await getDatabasePool().query(
-      `SELECT ss.id AS saved_id, ss.created_at AS saved_at, s.*
+      `SELECT ss.id AS saved_id, ss.created_at AS saved_at,
+              s.id, ${scholarshipFields.map((field) => `s.${field}`).join(", ")}
        FROM saved_scholarships ss
        JOIN scholarships s ON s.id = ss.scholarship_id
        WHERE ss.user_id = $1
@@ -39,7 +41,9 @@ export async function POST(request: Request) {
     const result = await getDatabasePool().query(
       `INSERT INTO saved_scholarships (user_id, scholarship_id)
        SELECT $1, id FROM scholarships
-       WHERE id = $2 AND status = 'published' AND verification_status = 'verified'
+       WHERE id = $2 AND status = 'published'
+         AND (verification_status = 'verified'
+           OR (submitted_by IS NOT NULL AND verification_status = 'pending'))
        ON CONFLICT (user_id, scholarship_id) DO NOTHING
        RETURNING id, user_id, scholarship_id, created_at`,
       [auth.user.id, parsed.data.scholarship_id],

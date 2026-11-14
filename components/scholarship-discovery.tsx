@@ -1,9 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Filter, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import {
+  Filter,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  X,
+} from "lucide-react";
 import ScholarshipCard from "@/components/scholarship-card";
 import { scholarships } from "@/lib/sample-data";
+import {
+  toScholarshipDisplay,
+  type ScholarshipRecord,
+} from "@/lib/scholarship-display";
+import type { Scholarship } from "@/lib/sample-data";
+import { auth } from "@/lib/firebase";
+
+type ScholarshipListResponse = {
+  error?: string;
+  scholarships?: ScholarshipRecord[];
+};
 
 const categories = [
   "All opportunities",
@@ -21,9 +41,76 @@ export default function ScholarshipDiscovery({
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("All opportunities");
   const [sortBy, setSortBy] = useState("Best match");
+  const [submittedScholarships, setSubmittedScholarships] = useState<
+    Scholarship[]
+  >([]);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadScholarships(user: User) {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch("/api/scholarships?limit=100", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        const result = (await response.json()) as ScholarshipListResponse;
+        if (!response.ok) {
+          throw new Error(result.error ?? "Unable to load submitted scholarships.");
+        }
+        if (!Array.isArray(result.scholarships)) {
+          throw new Error("The scholarship list response is invalid.");
+        }
+        if (active) {
+          setSubmittedScholarships(
+            result.scholarships.map(toScholarshipDisplay),
+          );
+        }
+      } catch (error) {
+        if (active) {
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load submitted scholarships.",
+          );
+        }
+      }
+    }
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (user) void loadScholarships(user);
+      },
+      (error) => {
+        if (active) setLoadError(error.message);
+      },
+    );
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const allScholarships = useMemo(
+    () => [...submittedScholarships, ...scholarships],
+    [submittedScholarships],
+  );
+  const availableCategories = useMemo(
+    () => [
+      ...categories.slice(0, 1),
+      ...new Set([
+        ...categories.slice(1),
+        ...submittedScholarships.map((scholarship) => scholarship.category),
+      ]),
+    ],
+    [submittedScholarships],
+  );
   const filteredScholarships = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const filtered = scholarships.filter((scholarship) => {
+    const filtered = allScholarships.filter((scholarship) => {
       const matchesCategory =
         category === "All opportunities" || scholarship.category === category;
       const matchesQuery =
@@ -41,8 +128,10 @@ export default function ScholarshipDiscovery({
           Number(b.amount.replace(/\D/g, "")) -
           Number(a.amount.replace(/\D/g, "")),
       );
-    return [...filtered].sort((a, b) => b.match - a.match);
-  }, [category, query, sortBy]);
+    return [...filtered].sort(
+      (a, b) => (b.match ?? -1) - (a.match ?? -1),
+    );
+  }, [allScholarships, category, query, sortBy]);
 
   return (
     <div>
@@ -58,10 +147,26 @@ export default function ScholarshipDiscovery({
             Thoughtful matches, clear details, and real opportunities.
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e0e7ff] px-3 py-1.5 text-[10px] font-semibold text-[#6366f1]">
-          <Sparkles size={12} /> Personalized for you
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/scholarships/submit"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#6366f1] px-3 py-2 text-[10px] font-semibold text-white transition hover:bg-[#312e81]"
+          >
+            <Plus size={13} /> Add a scholarship
+          </Link>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e0e7ff] px-3 py-1.5 text-[10px] font-semibold text-[#6366f1]">
+            <Sparkles size={12} /> Personalized for you
+          </span>
+        </div>
       </div>
+      {loadError && (
+        <p
+          className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          role="alert"
+        >
+          {loadError}
+        </p>
+      )}
       <div className="mt-6 rounded-2xl border border-[#ddd6fe] bg-white p-4 shadow-[0_2px_8px_rgba(29,36,68,0.025)] sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row">
           <label className="relative flex-1">
@@ -104,7 +209,7 @@ export default function ScholarshipDiscovery({
         </div>
         <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
           <Filter size={14} className="mr-1 shrink-0 text-[#9aa1b1]" />
-          {categories.map((item) => (
+          {availableCategories.map((item) => (
             <button
               key={item}
               type="button"

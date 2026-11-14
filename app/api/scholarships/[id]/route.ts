@@ -22,11 +22,16 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     const result = await getDatabasePool().query(
-      `SELECT * FROM scholarships WHERE id = $1
-       AND (status = 'published' AND verification_status = 'verified' OR $2)`,
+      `SELECT id, ${scholarshipFields.join(", ")},
+         submitted_by IS NOT NULL AND verification_status = 'pending' AS is_community_submitted
+       FROM scholarships WHERE id = $1
+       AND (status = 'published'
+         AND (verification_status = 'verified'
+           OR (submitted_by IS NOT NULL AND verification_status = 'pending'))
+         OR $2)`,
       [
         id.data,
-        auth.user.role === "content_admin" || auth.user.role === "super_admin",
+        auth.user.role === "content_admin",
       ],
     );
     if (!result.rowCount) {
@@ -42,7 +47,7 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
   const { id: rawId } = await context.params;
   const id = idSchema.safeParse(rawId);
@@ -65,7 +70,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     const fields = scholarshipFields.filter((field) =>
       Object.hasOwn(parsed.data, field),
     );
-    const values = fields.map((field) => parsed.data[field]);
+    const values = fields.map((field) =>
+      field === "benefits"
+        ? JSON.stringify(parsed.data[field])
+        : parsed.data[field],
+    );
     const result = await getDatabasePool().query(
       `UPDATE scholarships SET
          ${fields.map((field, index) => `${field} = $${index + 1}`).join(", ")},
@@ -86,7 +95,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
   const { id: rawId } = await context.params;
   const id = idSchema.safeParse(rawId);

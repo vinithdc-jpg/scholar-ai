@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT users_role_check
-        CHECK (role IN ('student', 'content_admin', 'super_admin'))
+        CHECK (role IN ('student', 'content_admin'))
 );
 
 DO $$
@@ -44,7 +44,7 @@ BEGIN
     ) THEN
         ALTER TABLE users
             ADD CONSTRAINT users_role_check
-            CHECK (role IN ('student', 'content_admin', 'super_admin'));
+            CHECK (role IN ('student', 'content_admin'));
     END IF;
 END
 $$;

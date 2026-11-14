@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { getDatabasePool } from "@/lib/db";
 
-export type AppRole = "student" | "content_admin" | "super_admin";
+export type AppRole = "student" | "content_admin";
 
 export type ApiUser = {
   id: string;

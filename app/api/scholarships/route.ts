@@ -20,7 +20,10 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const { page, limit, offset } = getPagination(url);
-  const filters = ["status = 'published'", "verification_status = 'verified'"];
+  const filters = [
+    "status = 'published'",
+    "(verification_status = 'verified' OR (submitted_by IS NOT NULL AND verification_status = 'pending'))",
+  ];
   const values: unknown[] = [];
 
   const addFilter = (sql: string, value: unknown) => {
@@ -51,7 +54,9 @@ export async function GET(request: Request) {
       values,
     );
     const rows = await pool.query(
-      `SELECT * FROM scholarships WHERE ${where}
+      `SELECT id, ${scholarshipFields.join(", ")},
+         submitted_by IS NOT NULL AND verification_status = 'pending' AS is_community_submitted
+       FROM scholarships WHERE ${where}
        ORDER BY application_deadline ASC NULLS LAST, created_at DESC
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, limit, offset],
@@ -66,7 +71,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
+  const auth = await requireRoles(request, ["content_admin"]);
   if (isResponse(auth)) return auth.response;
   const parsed = await readJson(request, createSchema);
   if (parsed.response) return parsed.response;

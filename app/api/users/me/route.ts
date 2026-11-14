@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { getDatabasePool } from "@/lib/db";
+import { isSuperAdminEmail } from "@/lib/super-admin";
 
 export async function POST(request: Request) {
   const authorization = request.headers.get("authorization");
@@ -50,20 +51,31 @@ export async function POST(request: Request) {
     );
   }
 
+  const isSuperAdmin = isSuperAdminEmail(decodedToken.email);
+
+  if (isSuperAdmin && decodedToken.email_verified !== true) {
+    return NextResponse.json(
+      { error: "Verify your email address before using the admin account." },
+      { status: 403 },
+    );
+  }
+
   try {
     const result = await getDatabasePool().query(
-      `INSERT INTO users (firebase_uid, full_name, email)
-       VALUES ($1, $2, $3)
+      `INSERT INTO users (firebase_uid, full_name, email, role)
+       VALUES ($1, $2, $3, CASE WHEN $4 THEN 'super_admin' ELSE 'student' END)
        ON CONFLICT (firebase_uid)
        DO UPDATE SET
          full_name = EXCLUDED.full_name,
          email = EXCLUDED.email,
+         role = CASE WHEN $4 THEN 'super_admin' ELSE users.role END,
          updated_at = CURRENT_TIMESTAMP
        RETURNING id, firebase_uid, full_name, email, role, created_at, updated_at`,
       [
         decodedToken.uid,
         typeof decodedToken.name === "string" ? decodedToken.name : null,
         decodedToken.email,
+        isSuperAdmin,
       ],
     );
 

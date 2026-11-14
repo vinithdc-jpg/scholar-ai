@@ -34,6 +34,14 @@ Firebase Admin reads credentials from `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBA
 
 The browser obtains tokens with Firebase `user.getIdToken()`, which refreshes expired tokens automatically, and sends them in the `Authorization: Bearer <token>` header.
 
+## Super-admin account
+
+The default super-admin email is `Admin@gmail.com`; optionally set the server-only `SUPERADMIN_EMAIL` environment variable (or legacy `SUPER_ADMIN_EMAIL`) to use a different Firebase email address. Super admins can sign in at `/super-admin`, where that email is prefilled from the server environment. The account must have a verified email before it receives the `super_admin` role.
+
+The email/password account must exist in Firebase Authentication. Optionally set `SUPERADMIN_PASSWORD` (or legacy `SUPER_ADMIN_PASSWORD`) as a server-only environment secret; when set, the Firebase-accepted password must also match it. Do not use a `NEXT_PUBLIC_` prefix or commit the secret. Passwords are never stored in PostgreSQL.
+
+Roles are stored in PostgreSQL and are never accepted from browser input. Protected API routes verify Firebase ID tokens and read the user's current database role; scholarship and document mutations require an admin role. Super admins can create Firebase-backed `content_admin` accounts and revoke admin access from the Admin workspace. The account password is sent directly to Firebase Authentication and is not stored in PostgreSQL; use a unique temporary password and share it securely.
+
 ## Database and environment setup
 
 The server validates `DATABASE_URL` during startup and before opening a PostgreSQL connection. Copy `.env.example` to `.env.local`, configure `DATABASE_URL` and the existing Firebase client/Admin settings, then apply migrations. Secret-bearing values must remain server-only.

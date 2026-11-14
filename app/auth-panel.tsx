@@ -8,6 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { FirebaseError } from "@/lib/firebase";
 import { auth } from "@/lib/firebase";
 import {
+  type AppRole,
   googleLogin,
   loginUser,
   logoutUser,
@@ -16,6 +17,13 @@ import {
 } from "@/lib/auth";
 
 type AuthMode = "sign-in" | "sign-up";
+type AuthPanelProps = {
+  superAdminEmail?: string;
+};
+
+function getPostLoginPath(role: AppRole) {
+  return role === "student" ? "/dashboard" : "/admin";
+}
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof FirebaseError) {
@@ -42,12 +50,13 @@ function getErrorMessage(error: unknown): string {
     : "Something went wrong. Please try again.";
 }
 
-export default function AuthPanel() {
+export default function AuthPanel({ superAdminEmail }: AuthPanelProps = {}) {
+  const isSuperAdminLogin = superAdminEmail !== undefined;
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(superAdminEmail ?? "");
   const [password, setPassword] = useState("");
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,17 +72,16 @@ export default function AuthPanel() {
         setUser(currentUser);
         setIsCheckingAuth(false);
 
-        if (currentUser) {
-          router.replace("/dashboard");
-        }
-
         if (initialAuthState.current) {
           initialAuthState.current = false;
 
           if (currentUser) {
             setIsSyncingProfile(true);
             syncUserProfile(currentUser)
-              .then(() => setProfileSaved(true))
+              .then((profile) => {
+                setProfileSaved(true);
+                router.replace(getPostLoginPath(profile.role));
+              })
               .catch((error: unknown) => {
                 setErrorMessage(getErrorMessage(error));
               })
@@ -98,13 +106,20 @@ export default function AuthPanel() {
     setProfileSaved(false);
 
     try {
+      let profile: Awaited<ReturnType<typeof syncUserProfile>>;
       if (mode === "sign-up") {
         const signedInUser = await registerUser(email, password, name);
-        await syncUserProfile(signedInUser);
+        profile = await syncUserProfile(signedInUser);
       } else {
-        const signedInUser = await loginUser(email, password);
-        await syncUserProfile(signedInUser);
+        const signedInUser = await loginUser(email, password, {
+          superAdminOnly: isSuperAdminLogin,
+        });
+        profile = await syncUserProfile(signedInUser);
       }
+      if (isSuperAdminLogin && profile.role !== "super_admin") {
+        throw new Error("This account does not have super-admin access.");
+      }
+      router.replace(getPostLoginPath(profile.role));
       setProfileSaved(true);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
@@ -120,7 +135,8 @@ export default function AuthPanel() {
 
     try {
       const signedInUser = await googleLogin();
-      await syncUserProfile(signedInUser);
+      const profile = await syncUserProfile(signedInUser);
+      router.replace(getPostLoginPath(profile.role));
       setProfileSaved(true);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
@@ -231,31 +247,41 @@ export default function AuthPanel() {
           ) : (
             <div className="w-full max-w-sm">
               <h2 className="text-3xl font-semibold tracking-tight">
-                {mode === "sign-in" ? "Welcome back" : "Create your account"}
+                {isSuperAdminLogin
+                  ? "Super admin sign in"
+                  : mode === "sign-in"
+                    ? "Welcome back"
+                    : "Create your account"}
               </h2>
               <p className="mt-2 text-sm text-slate-500">
-                {mode === "sign-in"
-                  ? "Sign in with your email or Google account."
-                  : "Get started with your email or Google account."}
+                {isSuperAdminLogin
+                  ? "Sign in to manage ScholarAI administrators."
+                  : mode === "sign-in"
+                    ? "Sign in with your email or Google account."
+                    : "Get started with your email or Google account."}
               </p>
 
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isSubmitting}
-                className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span aria-hidden="true" className="font-bold text-lg">
-                  G
-                </span>
-                Continue with Google
-              </button>
+              {!isSuperAdminLogin && (
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isSubmitting}
+                  className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span aria-hidden="true" className="font-bold text-lg">
+                    G
+                  </span>
+                  Continue with Google
+                </button>
+              )}
 
-              <div className="my-6 flex items-center gap-4 text-xs text-slate-400">
-                <span className="h-px flex-1 bg-slate-200" />
-                OR CONTINUE WITH EMAIL
-                <span className="h-px flex-1 bg-slate-200" />
-              </div>
+              {!isSuperAdminLogin && (
+                <div className="my-6 flex items-center gap-4 text-xs text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  OR CONTINUE WITH EMAIL
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {mode === "sign-up" && (
@@ -296,7 +322,9 @@ export default function AuthPanel() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20"
-                    placeholder="you@example.com"
+                    placeholder={
+                      isSuperAdminLogin ? undefined : "you@example.com"
+                    }
                   />
                 </div>
                 <div>
@@ -352,21 +380,45 @@ export default function AuthPanel() {
                 </div>
               )}
 
-              <p className="mt-6 text-center text-sm text-slate-500">
-                {mode === "sign-in"
-                  ? "New to Scholar AI?"
-                  : "Already have an account?"}{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode(mode === "sign-in" ? "sign-up" : "sign-in");
-                    setErrorMessage("");
-                  }}
-                  className="font-medium text-indigo-700 hover:text-indigo-800"
-                >
-                  {mode === "sign-in" ? "Create an account" : "Sign in"}
-                </button>
-              </p>
+              {isSuperAdminLogin ? (
+                <p className="mt-6 text-center text-sm text-slate-500">
+                  <Link
+                    href="/login"
+                    className="font-medium text-indigo-700 hover:text-indigo-800"
+                  >
+                    Return to regular sign in
+                  </Link>
+                </p>
+              ) : (
+                <>
+                  <p className="mt-6 text-center text-sm text-slate-500">
+                    {mode === "sign-in"
+                      ? "New to Scholar AI?"
+                      : "Already have an account?"}{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode(mode === "sign-in" ? "sign-up" : "sign-in");
+                        setErrorMessage("");
+                      }}
+                      className="font-medium text-indigo-700 hover:text-indigo-800"
+                    >
+                      {mode === "sign-in" ? "Create an account" : "Sign in"}
+                    </button>
+                  </p>
+                  {mode === "sign-in" && (
+                    <p className="mt-4 text-center text-sm text-slate-500">
+                      Super admin?{" "}
+                      <Link
+                        href="/super-admin"
+                        className="font-medium text-indigo-700 hover:text-indigo-800"
+                      >
+                        Sign in here
+                      </Link>
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           )}
         </section>

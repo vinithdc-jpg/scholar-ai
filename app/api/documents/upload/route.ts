@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { authenticateRequest, isResponse } from "@/lib/api/auth";
+import { isResponse, requireRoles } from "@/lib/api/auth";
 import { uploadPdf } from "@/lib/api/cloudinary";
 import { getDatabasePool } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
@@ -8,7 +8,7 @@ import { getServerEnv } from "@/lib/env";
 const maxFileSize = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const auth = await authenticateRequest(request);
+  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
   if (isResponse(auth)) return auth.response;
 
   let form: FormData;

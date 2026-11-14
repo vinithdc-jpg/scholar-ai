@@ -133,8 +133,14 @@ synchronizes the PostgreSQL profile. It returns the user and refreshed Firebase
 ID/refresh tokens so the token includes the saved display name. Configure valid
 Firebase Admin credentials for registration.
 
-`POST /api/auth/login` accepts `{ "email", "password" }` and returns the
-Firebase tokens and synchronized user profile.
+`POST /api/auth/login` accepts `{ "email", "password" }` and an optional
+`"superAdminOnly": true` flag for the dedicated super-admin page. The endpoint
+verifies credentials with Firebase and, when requested, restricts sign-in to
+the verified configured super-admin email. It returns a Firebase custom token
+and synchronized user profile; the browser exchanges the token with Firebase
+to establish its normal authenticated session. If configured,
+`SUPERADMIN_PASSWORD` is checked server-side and is never included in the
+client bundle.
 
 `POST /api/auth/logout` requires a Bearer token and revokes Firebase refresh
 tokens. The client calls this endpoint and then Firebase client `signOut()` to

@@ -1,120 +1,353 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import {
-  Activity,
-  ArrowDownToLine,
-  ArrowUpRight,
-  BadgeCheck,
-  Check,
-  CircleAlert,
-  Clock3,
-  FileText,
-  GraduationCap,
-  MoreHorizontal,
-  Plus,
-  RefreshCw,
-  ShieldCheck,
-  UploadCloud,
-  X,
-} from "lucide-react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Archive, Check, Pencil, Plus, UploadCloud, X } from "lucide-react";
 import { Pill, Surface } from "@/components/ui";
-import { scholarships } from "@/lib/sample-data";
+import { useWorkspaceRole } from "@/components/workspace-shell";
+import { auth } from "@/lib/firebase";
 
-const initialDocuments = [
-  {
-    name: "bright-futures-guidelines.pdf",
-    source: "horizonfoundation.org",
-    status: "Verified",
-    date: "Today, 9:41 AM",
-  },
-  {
-    name: "stem-leaders-application.pdf",
-    source: "northstareducation.org",
-    status: "Processing",
-    date: "Today, 9:18 AM",
-  },
-  {
-    name: "community-impact-2026.pdf",
-    source: "goodwellpartners.org",
-    status: "Needs review",
-    date: "Yesterday, 4:32 PM",
-  },
-];
+type AdminScholarship = {
+  id: number | string;
+  name: string;
+  provider: string;
+  description: string;
+  amount: number | string | null;
+  application_deadline: string | null;
+  official_source_url: string | null;
+  status: "draft" | "published" | "archived";
+  verification_status: "pending" | "verified" | "rejected";
+};
+
+type AdminDocument = {
+  id: number | string;
+  title: string;
+  document_type: string;
+  cloudinary_secure_url: string;
+  verification_status: "pending" | "verified" | "rejected";
+  processing_status: string;
+};
+
+type AdminAccount = {
+  id: number | string;
+  email: string;
+  full_name: string | null;
+  role: "content_admin" | "super_admin";
+};
+
+async function adminRequest(path: string, init: RequestInit = {}) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Sign in again to continue.");
+
+  const idToken = await user.getIdToken();
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${idToken}`);
+  if (init.body && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return fetch(path, { ...init, headers, cache: "no-store" });
+}
+
+async function responseError<T extends Record<string, unknown> = Record<string, unknown>>(
+  response: Response,
+): Promise<T & { error?: string }> {
+  const result = (await response.json()) as T & { error?: string };
+  if (!response.ok) {
+    throw new Error(result.error ?? "The request could not be completed.");
+  }
+  return result;
+}
+
+async function fetchAdminData(isSuperAdmin: boolean) {
+  const [scholarshipResponse, documentResponse, adminResponse] =
+    await Promise.all([
+      adminRequest("/api/admin/scholarships?limit=100"),
+      adminRequest("/api/admin/documents?limit=30"),
+      isSuperAdmin ? adminRequest("/api/admin/users") : Promise.resolve(null),
+    ]);
+  const scholarshipResult = await responseError<{
+    scholarships?: AdminScholarship[];
+  }>(scholarshipResponse);
+  const documentResult = await responseError<{
+    documents?: AdminDocument[];
+  }>(documentResponse);
+  const adminResult = adminResponse
+    ? await responseError<{ admins?: AdminAccount[] }>(adminResponse)
+    : null;
+
+  if (!Array.isArray(scholarshipResult.scholarships)) {
+    throw new Error("The scholarship list response is invalid.");
+  }
+  if (!Array.isArray(documentResult.documents)) {
+    throw new Error("The document list response is invalid.");
+  }
+  if (isSuperAdmin && (!adminResult || !Array.isArray(adminResult.admins))) {
+    throw new Error("The admin account list response is invalid.");
+  }
+
+  return {
+    scholarships: scholarshipResult.scholarships,
+    documents: documentResult.documents,
+    admins: adminResult?.admins ?? [],
+  };
+}
 
 export default function AdminPage() {
-  const [documents, setDocuments] = useState(initialDocuments);
-  const [uploadMessage, setUploadMessage] = useState("");
-  const [scholarshipCatalog, setScholarshipCatalog] = useState(scholarships);
-  const [createFormOpen, setCreateFormOpen] = useState(false);
-  const [catalogMessage, setCatalogMessage] = useState("");
+  const { role, isRoleLoading } = useWorkspaceRole();
+  const isAdmin = role === "content_admin" || role === "super_admin";
+  const isSuperAdmin = role === "super_admin";
+  const [scholarships, setScholarships] = useState<AdminScholarship[]>([]);
+  const [documents, setDocuments] = useState<AdminDocument[]>([]);
+  const [admins, setAdmins] = useState<AdminAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<AdminScholarship | null>(null);
 
-  function handleUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setDocuments((current) => [
-      {
-        name: file.name,
-        source: "Local demo upload",
-        status: "Queued",
-        date: "Just now",
-      },
-      ...current,
-    ]);
-    setUploadMessage(`${file.name} is queued for demo ingestion.`);
-    event.target.value = "";
-  }
+  const loadAdminData = useCallback(async () => {
+    try {
+      const data = await fetchAdminData(isSuperAdmin);
+      setScholarships(data.scholarships);
+      setDocuments(data.documents);
+      setAdmins(data.admins);
+      setIsLoading(false);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to load admin data.",
+      );
+      setIsLoading(false);
+    }
+  }, [isSuperAdmin]);
 
-  function markVerified(name: string) {
-    setDocuments((current) =>
-      current.map((document) =>
-        document.name === name ? { ...document, status: "Verified" } : document,
-      ),
-    );
-  }
+  useEffect(() => {
+    if (!isAdmin) return;
+    let active = true;
 
-  function addScholarship(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const name = String(formData.get("name") ?? "").trim();
-    const provider = String(formData.get("provider") ?? "").trim();
-    const amount = String(formData.get("amount") ?? "").trim();
-    const category = String(formData.get("category") ?? "Undergraduate");
-    if (!name || !provider || !amount) {
-      setCatalogMessage("Add a scholarship name, provider, and award amount.");
-      return;
+    async function load() {
+      try {
+        const data = await fetchAdminData(isSuperAdmin);
+        if (!active) return;
+        setScholarships(data.scholarships);
+        setDocuments(data.documents);
+        setAdmins(data.admins);
+      } catch (error) {
+        if (!active) return;
+        setErrorMessage(
+          error instanceof Error ? error.message : "Unable to load admin data.",
+        );
+      } finally {
+        if (active) setIsLoading(false);
+      }
     }
 
-    setScholarshipCatalog((current) => [
-      {
-        id: `sample-${Date.now()}`,
-        name,
-        provider,
-        amount,
-        deadline: "Jan 15, 2027",
-        daysLeft: 65,
-        category,
-        match: 0,
-        description: "New sample scholarship managed in this frontend demo.",
-        color: "from-[#6366f1] to-[#312e81]",
-        initials: provider.slice(0, 2).toUpperCase(),
-        eligibility: ["Review eligibility details with the provider."],
-        benefits: [amount],
-        documents: ["Application documents to be confirmed."],
-      },
-      ...current,
-    ]);
-    setCatalogMessage("Scholarship added to the sample catalog.");
-    setCreateFormOpen(false);
-    event.currentTarget.reset();
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [isAdmin, isSuperAdmin]);
+
+  async function handleScholarshipSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSaving(true);
+    setErrorMessage("");
+    setStatusMessage("");
+
+    try {
+      const formData = new FormData(event.currentTarget);
+      const amountValue = String(formData.get("amount") ?? "").trim();
+      const body = {
+        name: String(formData.get("name") ?? "").trim(),
+        provider: String(formData.get("provider") ?? "").trim(),
+        description: String(formData.get("description") ?? "").trim(),
+        amount: amountValue ? Number(amountValue) : null,
+        application_deadline:
+          String(formData.get("application_deadline") ?? "").trim() || null,
+        official_source_url:
+          String(formData.get("official_source_url") ?? "").trim() || null,
+        status: String(formData.get("status") ?? "draft"),
+        verification_status: String(
+          formData.get("verification_status") ?? "pending",
+        ),
+      };
+
+      if (body.amount !== null && !Number.isFinite(body.amount)) {
+        throw new Error("Enter a valid award amount.");
+      }
+
+      const response = await adminRequest(
+        editing ? `/api/scholarships/${editing.id}` : "/api/scholarships",
+        {
+          method: editing ? "PATCH" : "POST",
+          body: JSON.stringify(body),
+        },
+      );
+      await responseError(response);
+      setStatusMessage(editing ? "Scholarship updated." : "Scholarship added.");
+      setEditing(null);
+      setFormOpen(false);
+      await loadAdminData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to save scholarship.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function archiveScholarship(id: string) {
-    setScholarshipCatalog((current) =>
-      current.filter((scholarship) => scholarship.id !== id),
-    );
-    setCatalogMessage("Scholarship archived from this sample catalog.");
+  async function archiveScholarship(scholarship: AdminScholarship) {
+    setErrorMessage("");
+    setStatusMessage("");
+    try {
+      const response = await adminRequest(
+        `/api/scholarships/${scholarship.id}`,
+        { method: "DELETE" },
+      );
+      await responseError(response);
+      setStatusMessage("Scholarship archived.");
+      await loadAdminData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to archive scholarship.",
+      );
+    }
   }
+
+  async function uploadDocument(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage("");
+    setStatusMessage("");
+    const form = event.currentTarget;
+
+    try {
+      const values = new FormData(form);
+      const file = values.get("file");
+      if (!(file instanceof File)) {
+        throw new Error("Select a PDF file to upload.");
+      }
+
+      const body = new FormData();
+      body.set("file", file);
+      body.set("title", file.name.slice(0, 255));
+      body.set("document_type", "scholarship_source");
+      const scholarshipId = String(values.get("scholarship_id") ?? "");
+      if (scholarshipId) body.set("scholarship_id", scholarshipId);
+
+      const response = await adminRequest("/api/documents/upload", {
+        method: "POST",
+        body,
+      });
+      await responseError(response);
+      setStatusMessage("Scholarship source document uploaded.");
+      form.reset();
+      await loadAdminData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to upload document.",
+      );
+    }
+  }
+
+  async function verifyDocument(document: AdminDocument) {
+    setErrorMessage("");
+    setStatusMessage("");
+    try {
+      const response = await adminRequest(
+        `/api/admin/documents/${document.id}/verify`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ verification_status: "verified" }),
+        },
+      );
+      await responseError(response);
+      setStatusMessage("Document marked as verified.");
+      await loadAdminData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to verify document.",
+      );
+    }
+  }
+
+  async function createAdminAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSaving(true);
+    setErrorMessage("");
+    setStatusMessage("");
+    const form = event.currentTarget;
+
+    try {
+      const formData = new FormData(form);
+      const response = await adminRequest("/api/admin/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: formData.get("email"),
+          full_name: formData.get("full_name"),
+          password: formData.get("password"),
+        }),
+      });
+      await responseError(response);
+      setStatusMessage(
+        "Admin account created. Share its temporary password securely.",
+      );
+      form.reset();
+      await loadAdminData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to grant admin access.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function revokeAdminAccess(admin: AdminAccount) {
+    setErrorMessage("");
+    setStatusMessage("");
+    try {
+      const response = await adminRequest(`/api/admin/users/${admin.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role: "student" }),
+      });
+      await responseError(response);
+      setStatusMessage(`Admin access removed for ${admin.email}.`);
+      await loadAdminData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to revoke admin access.",
+      );
+    }
+  }
+
+  if (isRoleLoading) {
+    return (
+      <p className="text-sm text-[#858c9e]" role="status">
+        Verifying admin access…
+      </p>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Surface className="p-6">
+        <p className="text-sm text-rose-600" role="alert">
+          You do not have permission to access the admin workspace.
+        </p>
+      </Surface>
+    );
+  }
+
+  const publishedCount = scholarships.filter(
+    (scholarship) => scholarship.status === "published",
+  ).length;
+  const pendingCount = scholarships.filter(
+    (scholarship) => scholarship.verification_status === "pending",
+  ).length;
+  const draftCount = scholarships.filter(
+    (scholarship) => scholarship.status === "draft",
+  ).length;
 
   return (
     <div className="space-y-7">
@@ -127,58 +360,36 @@ export default function AdminPage() {
             Admin workspace
           </h1>
           <p className="mt-2 text-[12px] text-[#858c9e]">
-            Review sources and keep scholarship information dependable.
+            Manage scholarship information and verify its source documents.
           </p>
         </div>
-        <Pill tone="green">
-          <span className="mr-1.5 size-1.5 rounded-full bg-[#312e81]" /> System
-          healthy
+        <Pill tone="blue">
+          {role === "super_admin" ? "Super Admin" : "Admin"}
         </Pill>
       </div>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+      {errorMessage && (
+        <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+          {errorMessage}
+        </p>
+      )}
+      {statusMessage && (
+        <p className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4338ca]" role="status">
+          {statusMessage}
+        </p>
+      )}
+
+      <section className="grid gap-3 sm:grid-cols-3">
         {[
-          {
-            label: "Active scholarships",
-            value: "248",
-            change: "+12 this month",
-            icon: ShieldCheck,
-            color: "bg-[#e0e7ff] text-[#6366f1]",
-          },
-          {
-            label: "Documents indexed",
-            value: "1,842",
-            change: "+36 this week",
-            icon: FileText,
-            color: "bg-[#eef2ff] text-[#312e81]",
-          },
-          {
-            label: "Awaiting verification",
-            value: "8",
-            change: "3 need attention",
-            icon: CircleAlert,
-            color: "bg-[#fef3c7] text-[#f59e0b]",
-          },
-          {
-            label: "Ingestion success",
-            value: "98.6%",
-            change: "Last 30 days",
-            icon: Activity,
-            color: "bg-[#e0e7ff] text-[#312e81]",
-          },
-        ].map(({ label, value, change, icon: Icon, color }) => (
+          { label: "Published scholarships", value: publishedCount },
+          { label: "Awaiting verification", value: pendingCount },
+          { label: "Draft scholarships", value: draftCount },
+        ].map(({ label, value }) => (
           <Surface key={label} className="p-4">
-            <div className="flex items-start justify-between">
-              <p className="text-[10px] font-medium text-[#8990a2]">{label}</p>
-              <span
-                className={`grid size-8 place-items-center rounded-lg ${color}`}
-              >
-                <Icon size={16} />
-              </span>
-            </div>
-            <p className="mt-3 text-[23px] font-extrabold tracking-[-0.04em] text-[#0f172a] dark:text-white">
-              {value}
+            <p className="text-[11px] font-medium text-[#8990a2]">{label}</p>
+            <p className="mt-3 text-[23px] font-extrabold text-[#0f172a] dark:text-white">
+              {isLoading ? "…" : value}
             </p>
-            <p className="mt-1 text-[9px] text-[#8a91a1]">{change}</p>
           </Surface>
         ))}
       </section>
@@ -190,311 +401,393 @@ export default function AdminPage() {
               Scholarship catalog
             </h2>
             <p className="mt-1 text-[10px] text-[#9299aa]">
-              Add or archive opportunities in this local demo.
+              Add, edit, publish, and archive scholarship records.
             </p>
           </div>
           <button
             type="button"
             onClick={() => {
-              setCreateFormOpen((open) => !open);
-              setCatalogMessage("");
+              setEditing(null);
+              setFormOpen((open) => !open);
+              setErrorMessage("");
             }}
             className="inline-flex items-center gap-2 rounded-xl bg-[#6366f1] px-3 py-2.5 text-[10px] font-bold text-white hover:bg-[#312e81]"
           >
-            {createFormOpen ? <X size={13} /> : <Plus size={13} />}
-            {createFormOpen ? "Close form" : "Add scholarship"}
+            {formOpen ? <X size={13} /> : <Plus size={13} />}
+            {formOpen ? "Close form" : "Add scholarship"}
           </button>
         </div>
-        {createFormOpen && (
+
+        {formOpen && (
           <Surface className="mb-4 p-4 sm:p-5">
             <form
-              onSubmit={addScholarship}
-              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.7fr_0.8fr_auto] lg:items-end"
+              key={editing?.id ?? "new-scholarship"}
+              onSubmit={handleScholarshipSubmit}
+              className="grid gap-3 sm:grid-cols-2"
             >
               <label className="block">
-                <span className="mb-1.5 block text-[9px] font-semibold text-[#697186]">
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
                   Scholarship name
                 </span>
                 <input
                   name="name"
                   required
-                  maxLength={120}
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[10px] text-[#0f172a] outline-none focus:border-[#a5b4fc]"
+                  maxLength={255}
+                  defaultValue={editing?.name}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
                 />
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-[9px] font-semibold text-[#697186]">
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
                   Provider
                 </span>
                 <input
                   name="provider"
                   required
-                  maxLength={120}
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[10px] text-[#0f172a] outline-none focus:border-[#a5b4fc]"
+                  maxLength={255}
+                  defaultValue={editing?.provider}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
                 />
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-[9px] font-semibold text-[#697186]">
-                  Award
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
+                  Award amount
                 </span>
                 <input
                   name="amount"
-                  required
-                  maxLength={40}
-                  placeholder="$5,000"
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[10px] text-[#0f172a] outline-none placeholder:text-[#b2b7c3] focus:border-[#a5b4fc]"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  defaultValue={editing?.amount ?? ""}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
                 />
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-[9px] font-semibold text-[#697186]">
-                  Category
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
+                  Application deadline
+                </span>
+                <input
+                  name="application_deadline"
+                  type="date"
+                  defaultValue={editing?.application_deadline?.slice(0, 10) ?? ""}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
+                  Description
+                </span>
+                <textarea
+                  name="description"
+                  rows={3}
+                  defaultValue={editing?.description}
+                  className="workspace-input w-full rounded-xl border border-[#ddd6fe] bg-white px-3 py-2 text-[11px] text-[#0f172a]"
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
+                  Official source URL
+                </span>
+                <input
+                  name="official_source_url"
+                  type="url"
+                  defaultValue={editing?.official_source_url ?? ""}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
+                  Publication status
                 </span>
                 <select
-                  name="category"
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[10px] text-[#0f172a] outline-none focus:border-[#a5b4fc]"
+                  name="status"
+                  defaultValue={editing?.status ?? "draft"}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
                 >
-                  <option>Undergraduate</option>
-                  <option>STEM</option>
-                  <option>Community</option>
-                  <option>First-generation</option>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
+                  Verification status
+                </span>
+                <select
+                  name="verification_status"
+                  defaultValue={editing?.verification_status ?? "pending"}
+                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="verified">Verified</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </label>
               <button
                 type="submit"
-                className="h-10 rounded-xl bg-[#6366f1] px-4 text-[10px] font-bold text-white hover:bg-[#312e81]"
+                disabled={isSaving}
+                className="h-10 rounded-xl bg-[#6366f1] px-4 text-[10px] font-bold text-white hover:bg-[#312e81] disabled:opacity-60 sm:col-span-2 sm:justify-self-end"
               >
-                Add to catalog
+                {isSaving
+                  ? "Saving…"
+                  : editing
+                    ? "Save changes"
+                    : "Add scholarship"}
               </button>
             </form>
           </Surface>
         )}
-        {catalogMessage && (
-          <p
-            role="status"
-            className="mb-3 text-[10px] font-medium text-[#6366f1]"
-          >
-            {catalogMessage}
-          </p>
-        )}
+
         <Surface className="overflow-hidden">
-          <div className="hidden grid-cols-[1.4fr_1fr_0.65fr_0.7fr_auto] gap-3 border-b border-[#ddd6fe] bg-[#f5f3ff] px-4 py-3 text-[9px] font-semibold uppercase tracking-wide text-[#9ba1b0] sm:grid sm:px-5">
-            <span>Opportunity</span>
-            <span>Provider</span>
-            <span>Award</span>
-            <span>Status</span>
-            <span>Actions</span>
-          </div>
-          <div className="divide-y divide-[#ddd6fe]">
-            {scholarshipCatalog.map((scholarship) => (
-              <div
-                key={scholarship.id}
-                className="grid gap-2 px-4 py-3.5 sm:grid-cols-[1.4fr_1fr_0.65fr_0.7fr_auto] sm:items-center sm:gap-3 sm:px-5"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className={`grid size-8 shrink-0 place-items-center rounded-lg bg-linear-to-br ${scholarship.color} text-[9px] font-bold text-white`}
-                  >
-                    <GraduationCap size={14} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[10px] font-semibold text-[#0f172a]">
-                      {scholarship.name}
-                    </span>
-                    <span className="mt-0.5 block text-[9px] text-[#969dae]">
-                      {scholarship.category} · due {scholarship.deadline}
-                    </span>
-                  </span>
-                </div>
-                <p className="truncate text-[9px] text-[#81899c]">
-                  {scholarship.provider}
-                </p>
-                <p className="text-[10px] font-semibold text-[#51586d]">
-                  {scholarship.amount}
-                </p>
-                <div>
-                  <Pill tone="green">Active</Pill>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => archiveScholarship(scholarship.id)}
-                  className="justify-self-start rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[9px] font-semibold text-[#7b8295] hover:border-[#f1d8d1] hover:text-[#bd6959]"
+          {isLoading ? (
+            <p className="p-5 text-sm text-[#858c9e]" role="status">
+              Loading scholarships…
+            </p>
+          ) : scholarships.length ? (
+            <div className="divide-y divide-[#ddd6fe]">
+              {scholarships.map((scholarship) => (
+                <div
+                  key={scholarship.id}
+                  className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5"
                 >
-                  Archive
-                </button>
-              </div>
-            ))}
-            {scholarshipCatalog.length === 0 && (
-              <div className="px-5 py-9 text-center">
-                <p className="text-[11px] font-semibold text-[#60677b]">
-                  The catalog is empty.
-                </p>
-                <p className="mt-1 text-[9px] text-[#9198a8]">
-                  Add an opportunity to get started.
-                </p>
-              </div>
-            )}
-          </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-semibold text-[#0f172a] dark:text-white">
+                      {scholarship.name}
+                    </p>
+                    <p className="mt-1 text-[10px] text-[#858c9e]">
+                      {scholarship.provider}
+                      {scholarship.amount !== null
+                        ? ` · ${scholarship.amount}`
+                        : ""}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[10px] text-[#858c9e]">
+                      {scholarship.description}
+                    </p>
+                  </div>
+                  <Pill
+                    tone={
+                      scholarship.status === "published"
+                        ? "green"
+                        : scholarship.status === "archived"
+                          ? "amber"
+                          : "blue"
+                    }
+                  >
+                    {scholarship.status}
+                  </Pill>
+                  <Pill
+                    tone={
+                      scholarship.verification_status === "verified"
+                        ? "green"
+                        : scholarship.verification_status === "rejected"
+                          ? "amber"
+                          : "blue"
+                    }
+                  >
+                    {scholarship.verification_status}
+                  </Pill>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(scholarship);
+                      setFormOpen(true);
+                      setErrorMessage("");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[10px] font-semibold text-[#6366f1]"
+                  >
+                    <Pencil size={12} /> Edit
+                  </button>
+                  {scholarship.status !== "archived" && (
+                    <button
+                      type="button"
+                      onClick={() => archiveScholarship(scholarship)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[10px] font-semibold text-[#7b8295]"
+                    >
+                      <Archive size={12} /> Archive
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="p-5 text-sm text-[#858c9e]">
+              No scholarship records yet.
+            </p>
+          )}
         </Surface>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
-        <Surface className="overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ddd6fe] p-4 sm:px-5">
-            <div>
-              <h2 className="text-[13px] font-bold text-[#0f172a] dark:text-white">
-                Document management
-              </h2>
-              <p className="mt-1 text-[9px] text-[#9299aa]">
-                Review, verify, and maintain source documents.
-              </p>
-            </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#6366f1] px-3 py-2.5 text-[10px] font-bold text-white hover:bg-[#312e81]">
-              <UploadCloud size={14} /> Upload document
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={handleUpload}
-                className="sr-only"
-              />
-            </label>
-          </div>
-          {uploadMessage && (
-            <p
-              role="status"
-              className="mx-4 mt-3 rounded-lg bg-[#eef2ff] px-3 py-2 text-[10px] text-[#6366f1] sm:mx-5"
+      <section className="grid gap-5 xl:grid-cols-2">
+        <Surface className="p-4 sm:p-5">
+          <h2 className="text-[13px] font-bold text-[#0f172a] dark:text-white">
+            Upload scholarship source
+          </h2>
+          <p className="mt-1 text-[10px] text-[#9299aa]">
+            Upload a PDF and optionally attach it to a scholarship record.
+          </p>
+          <form onSubmit={uploadDocument} className="mt-4 space-y-3">
+            <input
+              name="file"
+              type="file"
+              accept=".pdf,application/pdf"
+              required
+              className="block w-full text-[11px] text-[#697186]"
+            />
+            <select
+              name="scholarship_id"
+              defaultValue=""
+              className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
             >
-              {uploadMessage}
-            </p>
-          )}
-          <div className="divide-y divide-[#ddd6fe]">
-            {documents.map((document) => {
-              const statusTone =
-                document.status === "Verified"
-                  ? "green"
-                  : document.status === "Needs review"
-                    ? "amber"
-                    : "blue";
-              return (
+              <option value="">Attach to a scholarship (optional)</option>
+              {scholarships.map((scholarship) => (
+                <option key={scholarship.id} value={scholarship.id}>
+                  {scholarship.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#6366f1] px-3 py-2.5 text-[10px] font-bold text-white"
+            >
+              <UploadCloud size={14} /> Upload PDF
+            </button>
+          </form>
+        </Surface>
+
+        <Surface className="overflow-hidden">
+          <div className="border-b border-[#ddd6fe] p-4">
+            <h2 className="text-[13px] font-bold text-[#0f172a] dark:text-white">
+              Source documents
+            </h2>
+          </div>
+          {documents.length ? (
+            <div className="divide-y divide-[#ddd6fe]">
+              {documents.map((document) => (
                 <div
-                  key={document.name}
-                  className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5"
+                  key={document.id}
+                  className="flex flex-wrap items-center gap-3 px-4 py-3"
                 >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e0e7ff] text-[#6366f1]">
-                    <FileText size={16} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[10px] font-semibold text-[#0f172a]">
-                      {document.name}
-                    </p>
-                    <p className="mt-1 truncate text-[9px] text-[#969dae]">
-                      {document.source} · {document.date}
-                    </p>
-                  </div>
-                  <Pill tone={statusTone}>{document.status}</Pill>
-                  {document.status !== "Verified" && (
+                  <a
+                    href={document.cloudinary_secure_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="min-w-0 flex-1 truncate text-[11px] font-medium text-[#6366f1] hover:underline"
+                  >
+                    {document.title}
+                  </a>
+                  <Pill
+                    tone={
+                      document.verification_status === "verified"
+                        ? "green"
+                        : document.verification_status === "rejected"
+                          ? "amber"
+                          : "blue"
+                    }
+                  >
+                    {document.verification_status}
+                  </Pill>
+                  {document.verification_status === "pending" && (
                     <button
                       type="button"
-                      onClick={() => markVerified(document.name)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[9px] font-semibold text-[#687087] hover:border-[#eef2ff] hover:text-[#312e81]"
+                      onClick={() => verifyDocument(document)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#ddd6fe] px-2 py-1 text-[10px] font-semibold text-[#6366f1]"
                     >
                       <Check size={12} /> Verify
                     </button>
                   )}
-                  <button
-                    type="button"
-                    aria-label={`More options for ${document.name}`}
-                    className="rounded-md p-1 text-[#a0a6b5] hover:bg-[#f6f7fa]"
-                  >
-                    <MoreHorizontal size={15} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          <button
-            type="button"
-            className="flex w-full items-center justify-center gap-2 border-t border-[#ddd6fe] py-3 text-[10px] font-semibold text-[#6366f1] hover:bg-[#e0e7ff]"
-          >
-            View all documents <ArrowUpRight size={12} />
-          </button>
-        </Surface>
-
-        <div className="space-y-4">
-          <Surface className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-[12px] font-bold text-[#0f172a] dark:text-white">
-                  Ingestion activity
-                </h2>
-                <p className="mt-1 text-[9px] text-[#9299aa]">
-                  Document processing status
-                </p>
-              </div>
-              <button
-                type="button"
-                aria-label="Refresh ingestion status"
-                className="rounded-lg p-2 text-[#959bac] hover:bg-[#f5f3ff]"
-              >
-                <RefreshCw size={14} />
-              </button>
-            </div>
-            <div className="mt-4 rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] p-3.5">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold text-[#5c6478]">
-                  Current queue
-                </p>
-                <Pill tone="blue">2 processing</Pill>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#ede9fe]">
-                <div className="h-full w-[68%] rounded-full bg-linear-to-r from-[#6366f1] to-[#312e81]" />
-              </div>
-              <p className="mt-2 flex items-center gap-1 text-[9px] text-[#9299aa]">
-                <Clock3 size={10} /> Last updated 2 minutes ago
-              </p>
-            </div>
-            <div className="mt-4 space-y-3">
-              {[
-                ["Documents queued", "4", "text-[#6366f1]"],
-                ["Successfully indexed", "32", "text-[#6366f1]"],
-                ["Failed, needs review", "1", "text-[#f59e0b]"],
-              ].map(([label, count, color]) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between text-[10px]"
-                >
-                  <span className="text-[#828a9c]">{label}</span>
-                  <span className={`font-bold ${color}`}>{count}</span>
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#ddd6fe] py-2.5 text-[10px] font-semibold text-[#697186] hover:bg-[#e0e7ff]"
-            >
-              <ArrowDownToLine size={13} /> Download activity report
-            </button>
-          </Surface>
-          <Surface className="flex items-center gap-3 bg-[#e0e7ff] p-4">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-[#6366f1]">
-              <BadgeCheck size={17} />
-            </span>
-            <div>
-              <p className="text-[10px] font-bold text-[#0f172a]">
-                Source quality check
-              </p>
-              <p className="mt-1 text-[9px] leading-4 text-[#858ca0]">
-                All scholarship records should link to a current source.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="ml-auto shrink-0 text-[9px] font-bold text-[#6366f1] hover:underline"
-            >
-              Review
-            </button>
-          </Surface>
-        </div>
+          ) : (
+            <p className="p-4 text-[11px] text-[#858c9e]">
+              No source documents uploaded.
+            </p>
+          )}
+        </Surface>
       </section>
+
+      {isSuperAdmin && (
+        <section>
+          <div className="mb-4">
+            <h2 className="text-[14px] font-bold text-[#0f172a] dark:text-white">
+              Admin accounts
+            </h2>
+            <p className="mt-1 text-[10px] text-[#9299aa]">
+              Create Firebase admin accounts or revoke existing admin access.
+              Share temporary passwords securely and never reuse passwords.
+            </p>
+          </div>
+          <Surface className="p-4 sm:p-5">
+            <form
+              onSubmit={createAdminAccount}
+              className="grid gap-3 sm:grid-cols-2"
+            >
+              <input
+                name="full_name"
+                type="text"
+                required
+                maxLength={255}
+                placeholder="Admin name"
+                className="workspace-input h-10 min-w-0 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+              />
+              <input
+                name="email"
+                type="email"
+                required
+                maxLength={255}
+                placeholder="admin@example.com"
+                className="workspace-input h-10 min-w-0 flex-1 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+              />
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={12}
+                maxLength={128}
+                autoComplete="new-password"
+                placeholder="Temporary password (12+ characters)"
+                className="workspace-input h-10 min-w-0 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a] sm:col-span-2"
+              />
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="rounded-xl bg-[#6366f1] px-4 py-2 text-[10px] font-bold text-white disabled:opacity-60 sm:col-span-2 sm:justify-self-end"
+              >
+                {isSaving ? "Creating…" : "Create admin account"}
+              </button>
+            </form>
+            <div className="mt-4 divide-y divide-[#ddd6fe]">
+              {admins.map((admin) => (
+                <div
+                  key={admin.id}
+                  className="flex flex-wrap items-center gap-3 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-semibold text-[#0f172a] dark:text-white">
+                      {admin.full_name ?? admin.email}
+                    </p>
+                    <p className="truncate text-[10px] text-[#858c9e]">
+                      {admin.email}
+                    </p>
+                  </div>
+                  <Pill tone={admin.role === "super_admin" ? "green" : "blue"}>
+                    {admin.role === "super_admin" ? "Super Admin" : "Admin"}
+                  </Pill>
+                  {admin.role === "content_admin" && (
+                    <button
+                      type="button"
+                      onClick={() => revokeAdminAccess(admin)}
+                      className="rounded-lg border border-[#ddd6fe] px-2.5 py-1.5 text-[10px] font-semibold text-[#7b8295]"
+                    >
+                      Revoke access
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Surface>
+        </section>
+      )}
     </div>
   );
 }

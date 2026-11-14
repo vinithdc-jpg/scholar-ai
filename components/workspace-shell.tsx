@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   Bell,
   Bookmark,
@@ -24,7 +32,17 @@ import {
   X,
 } from "lucide-react";
 import { useSavedScholarships } from "@/components/saved-scholarships-provider";
-import { logoutUser } from "@/lib/auth";
+import { getUserRole, logoutUser, type AppRole } from "@/lib/auth";
+import { auth } from "@/lib/firebase";
+
+const WorkspaceRoleContext = createContext<{
+  role: AppRole | null;
+  isRoleLoading: boolean;
+}>({ role: null, isRoleLoading: true });
+
+export function useWorkspaceRole() {
+  return useContext(WorkspaceRoleContext);
+}
 
 function subscribeToTheme(callback: () => void) {
   window.addEventListener("scholarai-theme-change", callback);
@@ -96,6 +114,9 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const [role, setRole] = useState<AppRole | null>(null);
+  const [isRoleLoading, setIsRoleLoading] = useState(true);
+  const [roleError, setRoleError] = useState("");
   const { savedIds } = useSavedScholarships();
   const darkMode = useSyncExternalStore(
     subscribeToTheme,
@@ -106,6 +127,58 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
+
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        setIsRoleLoading(true);
+        setRole(null);
+        setRoleError("");
+
+        if (!user) {
+          setRole(null);
+          setIsRoleLoading(false);
+          router.replace("/login");
+          return;
+        }
+
+        getUserRole(user)
+          .then((userRole) => {
+            if (!active) return;
+            setRole(userRole);
+            setIsRoleLoading(false);
+          })
+          .catch((error: unknown) => {
+            if (!active) return;
+            setRole(null);
+            setRoleError(
+              error instanceof Error
+                ? error.message
+                : "Unable to verify your account role.",
+            );
+            setIsRoleLoading(false);
+          });
+      },
+      (error) => {
+        if (!active) return;
+        setRole(null);
+        setRoleError(error.message);
+        setIsRoleLoading(false);
+      },
+    );
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (isRoleLoading || pathname !== "/admin") return;
+    if (role === "student") router.replace("/dashboard");
+  }, [isRoleLoading, pathname, role, router]);
 
   function toggleTheme() {
     const nextMode = !darkMode;
@@ -134,7 +207,8 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="workspace-canvas min-h-screen bg-[#f5f3ff] dark:bg-[#10131d]">
+    <WorkspaceRoleContext.Provider value={{ role, isRoleLoading }}>
+      <div className="workspace-canvas min-h-screen bg-[#f5f3ff] dark:bg-[#10131d]">
       <div
         className={`fixed inset-0 z-40 bg-[#151a2a]/40 transition-opacity md:hidden ${
           mobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -207,16 +281,20 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
               onNavigate={closeMenu}
             />
           ))}
-          <Link
-            href="/admin"
-            onClick={closeMenu}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
-              pathname === "/admin" ? "bg-[#6366f1] text-white" : "text-indigo-100 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <Settings2 size={17} />
-            Admin workspace
-          </Link>
+          {role === "content_admin" || role === "super_admin" ? (
+            <Link
+              href="/admin"
+              onClick={closeMenu}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                pathname === "/admin"
+                  ? "bg-[#6366f1] text-white"
+                  : "text-indigo-100 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Settings2 size={17} />
+              Admin workspace
+            </Link>
+          ) : null}
         </nav>
 
         {logoutError && (
@@ -281,6 +359,11 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="mx-auto w-full max-w-375 px-4 py-6 sm:px-7 sm:py-8 lg:px-9">
+          {roleError && (
+            <p className="text-sm text-rose-600" role="alert">
+              {roleError}
+            </p>
+          )}
           {children}
           <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-[#ddd6fe] py-5 text-[10px] text-[#a0a6b4]">
             <span>© 2026 ScholarAI. Built for your next big step.</span>
@@ -288,6 +371,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
           </footer>
         </main>
       </div>
-    </div>
+      </div>
+    </WorkspaceRoleContext.Provider>
   );
 }

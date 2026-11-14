@@ -3,6 +3,7 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { getUserRole } from "@/lib/auth";
 import { auth } from "@/lib/firebase";
 
 export default function AuthenticatedHome({
@@ -16,18 +17,35 @@ export default function AuthenticatedHome({
   );
 
   useEffect(() => {
-    return onAuthStateChanged(
+    let active = true;
+    const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
         if (user) {
-          router.replace("/dashboard");
+          getUserRole(user)
+            .then((role) => {
+              if (!active) return;
+              router.replace(
+                role === "student" ? "/dashboard" : "/admin",
+              );
+            })
+            .catch(() => {
+              if (active) setStatus("error");
+            });
           return;
         }
 
         setStatus("signed-out");
       },
-      () => setStatus("error"),
+      () => {
+        if (active) setStatus("error");
+      },
     );
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [router]);
 
   if (status === "checking") {

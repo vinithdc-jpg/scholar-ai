@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { authenticateRequest, isResponse } from "@/lib/api/auth";
+import { authenticateRequest, isResponse, requireRoles } from "@/lib/api/auth";
 import { deleteCloudinaryRaw } from "@/lib/api/cloudinary";
 import { databaseError } from "@/lib/api/http";
 import { getDatabasePool } from "@/lib/db";
@@ -44,7 +44,7 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const auth = await authenticateRequest(request);
+  const auth = await requireRoles(request, ["content_admin", "super_admin"]);
   if (isResponse(auth)) return auth.response;
   const id = z.coerce
     .number()
@@ -56,7 +56,6 @@ export async function DELETE(request: Request, context: RouteContext) {
       { error: "Invalid document ID." },
       { status: 400 },
     );
-  const isAdmin = auth.user.role !== "student";
   const pool = getDatabasePool();
   const client = await pool.connect();
 
@@ -64,8 +63,8 @@ export async function DELETE(request: Request, context: RouteContext) {
     await client.query("BEGIN");
     const result = await client.query(
       `SELECT cloudinary_public_id FROM scholarship_documents WHERE id = $1
-       ${isAdmin ? "" : "AND uploaded_by = $2"} FOR UPDATE`,
-      isAdmin ? [id.data] : [id.data, auth.user.id],
+       FOR UPDATE`,
+      [id.data],
     );
     if (!result.rowCount) {
       await client.query("ROLLBACK");

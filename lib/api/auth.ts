@@ -41,7 +41,10 @@ export async function authenticateRequest(
     );
     return {
       response: NextResponse.json(
-        { error: "Firebase Admin authentication is not configured on the server." },
+        {
+          error:
+            "Firebase Admin authentication is not configured on the server.",
+        },
         { status: 500 },
       ),
     };
@@ -53,7 +56,10 @@ export async function authenticateRequest(
   } catch {
     return {
       response: NextResponse.json(
-        { error: "Unable to verify your Firebase sign-in. Please sign in again." },
+        {
+          error:
+            "Unable to verify your Firebase sign-in. Please sign in again.",
+        },
         { status: 401 },
       ),
     };
@@ -90,7 +96,10 @@ export async function authenticateRequest(
     console.error("Unable to load authenticated user profile.", error);
     return {
       response: NextResponse.json(
-        { error: "Unable to load your profile. Check database setup and connectivity." },
+        {
+          error:
+            "Unable to load your profile. Check database setup and connectivity.",
+        },
         { status: 503 },
       ),
     };

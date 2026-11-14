@@ -56,7 +56,8 @@ function readServiceAccount(): ServiceAccountJson {
       process.env.FIREBASE_ADMIN_CLIENT_EMAIL ??
       process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey =
-      process.env.FIREBASE_ADMIN_PRIVATE_KEY ?? process.env.FIREBASE_PRIVATE_KEY;
+      process.env.FIREBASE_ADMIN_PRIVATE_KEY ??
+      process.env.FIREBASE_PRIVATE_KEY;
 
     if (!projectId || !clientEmail || !privateKey) {
       throw new Error(

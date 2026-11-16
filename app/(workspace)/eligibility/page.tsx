@@ -12,6 +12,7 @@ import {
   Target,
 } from "lucide-react";
 import { Surface } from "@/components/ui";
+import { CustomSelect } from "@/components/custom-fields";
 
 export default function EligibilityPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -53,56 +54,62 @@ export default function EligibilityPage() {
             result.
           </p>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-            <label className="block">
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-semibold text-[#5f677b]">
                 Current education level
               </span>
-              <select
+              <CustomSelect
                 value={level}
-                onChange={(event) => setLevel(event.target.value)}
-                className="workspace-input h-11 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[12px] text-[#0f172a] outline-none focus:border-[#a5b4fc]"
-              >
-                <option>High school</option>
-                <option>Undergraduate</option>
-                <option>Graduate</option>
-                <option>Doctoral</option>
-                <option>Trade or vocational</option>
-              </select>
-            </label>
-            <label className="block">
+                onValueChange={setLevel}
+                ariaLabel="Current education level"
+                options={[
+                  { value: "High school", label: "High school" },
+                  { value: "Undergraduate", label: "Undergraduate" },
+                  { value: "Graduate", label: "Graduate" },
+                  { value: "Doctoral", label: "Doctoral" },
+                  { value: "Trade or vocational", label: "Trade or vocational" },
+                ]}
+                className="h-11 text-[12px]"
+              />
+            </div>
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-semibold text-[#5f677b]">
                 Field of study
               </span>
-              <select
+              <CustomSelect
                 value={field}
-                onChange={(event) => setField(event.target.value)}
-                className="workspace-input h-11 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[12px] text-[#0f172a] outline-none focus:border-[#a5b4fc]"
-              >
-                <option>Computer Science</option>
-                <option>Engineering</option>
-                <option>Business</option>
-                <option>Education</option>
-                <option>Health Sciences</option>
-                <option>Arts & Humanities</option>
-                <option>Other</option>
-              </select>
-            </label>
-            <label className="block">
+                onValueChange={setField}
+                ariaLabel="Field of study"
+                options={[
+                  { value: "Computer Science", label: "Computer Science" },
+                  { value: "Engineering", label: "Engineering" },
+                  { value: "Business", label: "Business" },
+                  { value: "Education", label: "Education" },
+                  { value: "Health Sciences", label: "Health Sciences" },
+                  { value: "Arts & Humanities", label: "Arts & Humanities" },
+                  { value: "Other", label: "Other" },
+                ]}
+                className="h-11 text-[12px]"
+              />
+            </div>
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-semibold text-[#5f677b]">
                 Current GPA
               </span>
-              <select
+              <CustomSelect
                 value={gpa}
-                onChange={(event) => setGpa(event.target.value)}
-                className="workspace-input h-11 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[12px] text-[#0f172a] outline-none focus:border-[#a5b4fc]"
-              >
-                <option value="4.0">3.8 – 4.0</option>
-                <option value="3.5">3.5 – 3.79</option>
-                <option value="3.2">3.2 – 3.49</option>
-                <option value="3.0">3.0 – 3.19</option>
-                <option value="2.5">Below 3.0</option>
-              </select>
-            </label>
+                onValueChange={setGpa}
+                ariaLabel="Current GPA"
+                options={[
+                  { value: "4.0", label: "3.8 – 4.0" },
+                  { value: "3.5", label: "3.5 – 3.79" },
+                  { value: "3.2", label: "3.2 – 3.49" },
+                  { value: "3.0", label: "3.0 – 3.19" },
+                  { value: "2.5", label: "Below 3.0" },
+                ]}
+                className="h-11 text-[12px]"
+              />
+            </div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#ddd6fe] p-3.5">
               <input
                 type="checkbox"

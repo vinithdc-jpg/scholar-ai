@@ -50,6 +50,42 @@ textarea {
   font: inherit;
 }
 
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 0.75rem;
+  padding-right: 2.1rem;
+  cursor: pointer;
+}
+
+.site-select {
+  border: 1px solid #c7d2fe;
+  border-radius: 0.875rem;
+  background-color: #fff;
+  color: #312e81;
+  padding: 0.6rem 2.5rem 0.6rem 0.9rem;
+  line-height: 1.2;
+  font-weight: 700;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.site-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+  outline: none;
+}
+
+.dark .site-select,
+.dark select {
+  background-color: var(--surface);
+  border-color: var(--line);
+  color: var(--foreground);
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

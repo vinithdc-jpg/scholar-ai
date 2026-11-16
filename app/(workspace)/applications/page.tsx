@@ -13,11 +13,18 @@ import {
   Plus,
 } from "lucide-react";
 import { Pill, ProgressBar, Surface } from "@/components/ui";
+import { CustomSelect } from "@/components/custom-fields";
 import { applications } from "@/lib/sample-data";
+
+const applicationFilters = [
+  "All applications",
+  "In progress",
+  "Submitted",
+  "Draft",
+];
 
 export default function ApplicationsPage() {
   const [filter, setFilter] = useState("All applications");
-  const options = ["All applications", "In progress", "Submitted", "Draft"];
   const filtered = applications.filter(
     (item) => filter === "All applications" || item.status === filter,
   );
@@ -90,19 +97,19 @@ export default function ApplicationsPage() {
             Keep each application moving at your own pace.
           </p>
         </div>
-        <label className="flex items-center gap-2 text-[10px] font-semibold text-[#8b92a2]">
+        <div className="flex items-center gap-2 text-[10px] font-semibold text-[#8b92a2]">
           Show
-          <select
-            aria-label="Filter applications"
+          <CustomSelect
             value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            className="rounded-lg border border-[#ddd6fe] bg-white px-2.5 py-2 text-[10px] text-[#555d71] outline-none"
-          >
-            {options.map((option) => (
-              <option key={option}>{option}</option>
-            ))}
-          </select>
-        </label>
+            onValueChange={setFilter}
+            ariaLabel="Filter applications"
+            options={applicationFilters.map((option) => ({
+              value: option,
+              label: option,
+            }))}
+            className="min-w-42.5 text-[11px] shadow-[0_0_0_3px_rgba(99,102,241,0.08)]"
+          />
+        </div>
       </div>
       <div className="mt-4 space-y-3">
         {filtered.map((item, index) => (

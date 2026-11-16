@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import ScholarshipCard from "@/components/scholarship-card";
+import { CustomSelect } from "@/components/custom-fields";
 import { scholarships } from "@/lib/sample-data";
 import {
   toScholarshipDisplay,
@@ -192,20 +193,21 @@ export default function ScholarshipDiscovery({
               </button>
             )}
           </label>
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#858c9e]">
-            <SlidersHorizontal size={15} />
+          <div className="flex items-center gap-2 text-[11px] text-[#858c9e]">
+            <SlidersHorizontal size={15} aria-hidden="true" />
             <span className="hidden sm:inline">Sort by</span>
-            <select
+            <CustomSelect
               value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
-              aria-label="Sort scholarships"
-              className="bg-transparent font-semibold text-[#555d72] outline-none"
-            >
-              <option>Best match</option>
-              <option>Deadline</option>
-              <option>Award amount</option>
-            </select>
-          </label>
+              onValueChange={setSortBy}
+              ariaLabel="Sort scholarships"
+              options={[
+                { label: "Best match", value: "Best match" },
+                { label: "Deadline", value: "Deadline" },
+                { label: "Award amount", value: "Award amount" },
+              ]}
+              className="w-[150px] text-[11px]"
+            />
+          </div>
         </div>
         <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
           <Filter size={14} className="mr-1 shrink-0 text-[#9aa1b1]" />

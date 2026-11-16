@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { ProgressBar, Surface } from "@/components/ui";
+import {
+  CustomCombobox,
+  CustomDatePicker,
+} from "@/components/custom-fields";
 import { syncUserProfile } from "@/lib/auth";
 import { auth } from "@/lib/firebase";
 
@@ -68,6 +72,23 @@ const emptyProfile: ProfileForm = {
 
 const inputClassName =
   "workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a] outline-none focus:border-[#a5b4fc] disabled:cursor-not-allowed disabled:opacity-60";
+
+const educationLevelOptions = [
+  "High school",
+  "Undergraduate",
+  "Graduate",
+  "Doctoral",
+  "Trade or vocational",
+];
+
+const courseOptions = [
+  "Computer Science",
+  "Engineering",
+  "Business",
+  "Education",
+  "Health Sciences",
+  "Arts & Humanities",
+];
 
 function toProfileForm(profile: StudentProfile | null): ProfileForm {
   return {
@@ -491,15 +512,15 @@ export default function ProfilePage() {
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#666e81]">
                   Date of birth
                 </span>
-                <input
+                <CustomDatePicker
                   value={profile.date_of_birth}
-                  type="date"
                   max={new Date().toISOString().slice(0, 10)}
                   disabled={formDisabled}
-                  onChange={(event) =>
-                    updateField("date_of_birth", event.target.value)
+                  onValueChange={(value) =>
+                    updateField("date_of_birth", value)
                   }
-                  className={inputClassName}
+                  ariaLabel="Date of birth"
+                  className="text-[11px]"
                 />
               </label>
               <label className="block">
@@ -598,44 +619,31 @@ export default function ProfilePage() {
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#666e81]">
                   Education level
                 </span>
-                <input
+                <CustomCombobox
                   value={profile.education_level}
-                  list="education-level-options"
+                  options={educationLevelOptions}
                   maxLength={120}
                   disabled={formDisabled}
-                  onChange={(event) =>
-                    updateField("education_level", event.target.value)
+                  onValueChange={(value) =>
+                    updateField("education_level", value)
                   }
+                  ariaLabel="Education level"
                   className={inputClassName}
                 />
-                <datalist id="education-level-options">
-                  <option value="High school" />
-                  <option value="Undergraduate" />
-                  <option value="Graduate" />
-                  <option value="Doctoral" />
-                  <option value="Trade or vocational" />
-                </datalist>
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#666e81]">
                   Field of study
                 </span>
-                <input
+                <CustomCombobox
                   value={profile.course}
-                  list="course-options"
+                  options={courseOptions}
                   maxLength={255}
                   disabled={formDisabled}
-                  onChange={(event) => updateField("course", event.target.value)}
+                  onValueChange={(value) => updateField("course", value)}
+                  ariaLabel="Field of study"
                   className={inputClassName}
                 />
-                <datalist id="course-options">
-                  <option value="Computer Science" />
-                  <option value="Engineering" />
-                  <option value="Business" />
-                  <option value="Education" />
-                  <option value="Health Sciences" />
-                  <option value="Arts & Humanities" />
-                </datalist>
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#666e81]">

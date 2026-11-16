@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { Pill, Surface } from "@/components/ui";
+import { CustomDatePicker } from "@/components/custom-fields";
 import { auth } from "@/lib/firebase";
 
 type CreatedScholarship = { id: number | string; name: string };
@@ -242,20 +243,20 @@ export default function SubmitScholarshipPage() {
               <span className="mb-1.5 block text-[11px] font-semibold text-[#697186]">
                 Application opens
               </span>
-              <input
+              <CustomDatePicker
                 name="application_start_date"
-                type="date"
-                className="workspace-input h-11 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[12px]"
+                ariaLabel="Application opens"
+                className="text-[12px]"
               />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-[11px] font-semibold text-[#697186]">
                 Application deadline
               </span>
-              <input
+              <CustomDatePicker
                 name="application_deadline"
-                type="date"
-                className="workspace-input h-11 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[12px]"
+                ariaLabel="Application deadline"
+                className="text-[12px]"
               />
             </label>
           </div>

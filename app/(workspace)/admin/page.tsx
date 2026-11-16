@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Archive, Check, Pencil, Plus, UploadCloud, X } from "lucide-react";
 import { Pill, Surface } from "@/components/ui";
+import {
+  CustomDatePicker,
+  CustomSelect,
+} from "@/components/custom-fields";
 import { useWorkspaceRole } from "@/components/workspace-shell";
 import { auth } from "@/lib/firebase";
 
@@ -477,13 +481,13 @@ export default function AdminPage() {
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
                   Application deadline
                 </span>
-                <input
+                <CustomDatePicker
                   name="application_deadline"
-                  type="date"
                   defaultValue={
                     editing?.application_deadline?.slice(0, 10) ?? ""
                   }
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
+                  ariaLabel="Application deadline"
+                  className="h-10 text-[11px]"
                 />
               </label>
               <label className="block sm:col-span-2">
@@ -508,34 +512,38 @@ export default function AdminPage() {
                   className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
                 />
               </label>
-              <label className="block">
+              <div className="block">
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
                   Publication status
                 </span>
-                <select
+                <CustomSelect
                   name="status"
                   defaultValue={editing?.status ?? "draft"}
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </label>
-              <label className="block">
+                  ariaLabel="Publication status"
+                  options={[
+                    { value: "draft", label: "Draft" },
+                    { value: "published", label: "Published" },
+                    { value: "archived", label: "Archived" },
+                  ]}
+                  className="text-[11px]"
+                />
+              </div>
+              <div className="block">
                 <span className="mb-1.5 block text-[10px] font-semibold text-[#697186]">
                   Verification status
                 </span>
-                <select
+                <CustomSelect
                   name="verification_status"
                   defaultValue={editing?.verification_status ?? "pending"}
-                  className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="verified">Verified</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </label>
+                  ariaLabel="Verification status"
+                  options={[
+                    { value: "pending", label: "Pending" },
+                    { value: "verified", label: "Verified" },
+                    { value: "rejected", label: "Rejected" },
+                  ]}
+                  className="text-[11px]"
+                />
+              </div>
               <button
                 type="submit"
                 disabled={isSaving}
@@ -646,18 +654,22 @@ export default function AdminPage() {
               required
               className="block w-full text-[11px] text-[#697186]"
             />
-            <select
+            <CustomSelect
               name="scholarship_id"
               defaultValue=""
-              className="workspace-input h-10 w-full rounded-xl border border-[#ddd6fe] bg-white px-3 text-[11px] text-[#0f172a]"
-            >
-              <option value="">Attach to a scholarship (optional)</option>
-              {scholarships.map((scholarship) => (
-                <option key={scholarship.id} value={scholarship.id}>
-                  {scholarship.name}
-                </option>
-              ))}
-            </select>
+              ariaLabel="Attach to a scholarship (optional)"
+              options={[
+                {
+                  value: "",
+                  label: "Attach to a scholarship (optional)",
+                },
+                ...scholarships.map((scholarship) => ({
+                  value: String(scholarship.id),
+                  label: scholarship.name,
+                })),
+              ]}
+              className="text-[11px]"
+            />
             <button
               type="submit"
               className="inline-flex items-center gap-2 rounded-xl bg-[#6366f1] px-3 py-2.5 text-[10px] font-bold text-white"

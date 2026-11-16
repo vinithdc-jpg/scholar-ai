@@ -242,7 +242,9 @@ export default function LandingPage() {
                 <p className="text-[12px] font-bold text-[#0f172a]">
                   Made for you
                 </p>
-                <p className="text-[11px] font-medium text-[#8e95a6]">Real opportunities</p>
+                <p className="text-[11px] font-medium text-[#8e95a6]">
+                  Real opportunities
+                </p>
               </div>
             </div>
             <div className="absolute -right-3 bottom-[20%] hidden items-center gap-2 rounded-xl border border-[#e0e7ff] bg-white px-3 py-2.5 shadow-[0_8px_24px_rgba(36,39,88,0.12)] sm:flex">
@@ -253,7 +255,9 @@ export default function LandingPage() {
                 <p className="text-[12px] font-bold text-[#0f172a]">
                   Next step ready
                 </p>
-                <p className="text-[11px] font-medium text-[#8e95a6]">Deadline in 12 days</p>
+                <p className="text-[11px] font-medium text-[#8e95a6]">
+                  Deadline in 12 days
+                </p>
               </div>
             </div>
           </div>
@@ -272,7 +276,9 @@ export default function LandingPage() {
               <p className="text-[20px] font-extrabold tracking-[-0.04em] text-[#0f172a]">
                 {stat.value}
               </p>
-              <p className="mt-1 text-[12px] font-medium text-[#858c9e]">{stat.label}</p>
+              <p className="mt-1 text-[12px] font-medium text-[#858c9e]">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>

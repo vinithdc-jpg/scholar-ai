@@ -29,9 +29,7 @@ export default function ScholarshipCard({
             </p>
           </div>
         </div>
-        <SaveScholarshipButton
-          scholarship={scholarship}
-        />
+        <SaveScholarshipButton scholarship={scholarship} />
       </div>
       <p className="mt-4 line-clamp-2 min-h-10 text-[12px] leading-5 text-[#858ca0]">
         {scholarship.description}

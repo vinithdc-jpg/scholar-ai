@@ -104,7 +104,10 @@ export default function ProfileDocuments() {
         </p>
       </div>
       {error && (
-        <p className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-[12px] text-rose-700" role="alert">
+        <p
+          className="mb-3 rounded-xl bg-rose-50 px-4 py-3 text-[12px] text-rose-700"
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -129,7 +132,8 @@ export default function ProfileDocuments() {
                     </p>
                     <p className="mt-1 text-[10px] text-[#8b92a3]">
                       {document.document_type || "Document"} ·{" "}
-                      {document.verification_status} · {document.processing_status}
+                      {document.verification_status} ·{" "}
+                      {document.processing_status}
                     </p>
                   </div>
                   {fileUrl && (
@@ -161,7 +165,9 @@ export default function ProfileDocuments() {
                   >
                     <ChevronDown
                       size={15}
-                      className={selected?.id === document.id ? "rotate-180" : ""}
+                      className={
+                        selected?.id === document.id ? "rotate-180" : ""
+                      }
                     />
                   </button>
                 </div>
@@ -169,7 +175,9 @@ export default function ProfileDocuments() {
                   <div className="mt-3 grid gap-2 border-t border-[#ddd6fe] pt-3 text-[10px] text-[#747c91] sm:grid-cols-2">
                     <p>File: {selected.original_filename || "Not available"}</p>
                     <p>Type: {selected.mime_type || "Not available"}</p>
-                    <p>Academic year: {selected.academic_year || "Not specified"}</p>
+                    <p>
+                      Academic year: {selected.academic_year || "Not specified"}
+                    </p>
                     <p>
                       Pages: {selected.page_count ?? "Not available"} · Version{" "}
                       {selected.version ?? 1}

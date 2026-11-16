@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import {
   CalendarDays,
   Check,
@@ -105,7 +99,8 @@ export function CustomSelect({
 
     event.preventDefault();
     const direction = event.key === "ArrowDown" ? 1 : -1;
-    const nextIndex = (currentIndex + direction + options.length) % options.length;
+    const nextIndex =
+      (currentIndex + direction + options.length) % options.length;
     optionRefs.current[nextIndex]?.focus();
   }
 
@@ -247,8 +242,11 @@ export function CustomCombobox({
       const direction = event.key === "ArrowDown" ? 1 : -1;
       setActiveIndex((index) => {
         if (!visibleOptions.length) return -1;
-        if (index === -1) return direction === 1 ? 0 : visibleOptions.length - 1;
-        return (index + direction + visibleOptions.length) % visibleOptions.length;
+        if (index === -1)
+          return direction === 1 ? 0 : visibleOptions.length - 1;
+        return (
+          (index + direction + visibleOptions.length) % visibleOptions.length
+        );
       });
       return;
     }
@@ -288,9 +286,11 @@ export function CustomCombobox({
         }}
         onKeyDown={handleKeyDown}
         onBlur={(event) => {
-          if (!event.currentTarget.parentElement?.contains(
-            event.relatedTarget as Node | null,
-          )) {
+          if (
+            !event.currentTarget.parentElement?.contains(
+              event.relatedTarget as Node | null,
+            )
+          ) {
             setIsOpen(false);
             setActiveIndex(-1);
           }
@@ -386,11 +386,10 @@ export function CustomDatePicker({
   const [opensAbove, setOpensAbove] = useState(false);
   const selectedValue = value === undefined ? internalValue : value;
   const selectedDate = parseDate(selectedValue);
-  const [visibleMonth, setVisibleMonth] = useState(
-    () =>
-      selectedDate
-        ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
-        : new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    selectedDate
+      ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
+      : new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   );
 
   useEffect(() => {
@@ -579,13 +578,7 @@ export function CustomDatePicker({
                   value={year}
                   aria-pressed={year === visibleMonth.getFullYear()}
                   onClick={() => {
-                    setVisibleMonth(
-                      new Date(
-                        year,
-                        visibleMonth.getMonth(),
-                        1,
-                      ),
-                    );
+                    setVisibleMonth(new Date(year, visibleMonth.getMonth(), 1));
                     setIsChoosingYear(false);
                   }}
                   className={`rounded-lg px-2 py-2 text-[10px] font-medium transition-colors ${

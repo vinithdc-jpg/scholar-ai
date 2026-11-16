@@ -84,7 +84,9 @@ export default function ScholarshipDiscovery({
             throw new Error("The scholarship list response is invalid.");
           }
           if (active) {
-            setCatalogScholarships(result.scholarships.map(toScholarshipDisplay));
+            setCatalogScholarships(
+              result.scholarships.map(toScholarshipDisplay),
+            );
             setTotal(result.pagination?.total ?? result.scholarships.length);
           }
         })
@@ -139,9 +141,7 @@ export default function ScholarshipDiscovery({
           Number(b.amount.replace(/\D/g, "")) -
           Number(a.amount.replace(/\D/g, "")),
       );
-    return [...filtered].sort(
-      (a, b) => (b.match ?? -1) - (a.match ?? -1),
-    );
+    return [...filtered].sort((a, b) => (b.match ?? -1) - (a.match ?? -1));
   }, [catalogScholarships, category, query, sortBy]);
 
   return (
@@ -301,9 +301,10 @@ export default function ScholarshipDiscovery({
             ariaLabel="Filter by scholarship type"
             options={[
               { value: "", label: "Any scholarship type" },
-              ...["Merit", "Need-based", "STEM", "Community"].map(
-                (value) => ({ value, label: value }),
-              ),
+              ...["Merit", "Need-based", "STEM", "Community"].map((value) => ({
+                value,
+                label: value,
+              })),
             ]}
             className="text-[11px]"
           />

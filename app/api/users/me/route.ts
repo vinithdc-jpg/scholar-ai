@@ -59,7 +59,7 @@ export async function POST(request: Request) {
          full_name = EXCLUDED.full_name,
          email = EXCLUDED.email,
          updated_at = CURRENT_TIMESTAMP
-       RETURNING id, firebase_uid, full_name, email, role, created_at, updated_at`,
+       RETURNING id, firebase_uid, full_name, email, created_at, updated_at`,
       [
         decodedToken.uid,
         typeof decodedToken.name === "string" ? decodedToken.name : null,

@@ -4,13 +4,9 @@ import Link from "next/link";
 import { Bookmark, Compass, Search } from "lucide-react";
 import ScholarshipCard from "@/components/scholarship-card";
 import { useSavedScholarships } from "@/components/saved-scholarships-provider";
-import { scholarships } from "@/lib/sample-data";
 
 export default function SavedPage() {
-  const { savedIds } = useSavedScholarships();
-  const savedScholarships = scholarships.filter((scholarship) =>
-    savedIds.includes(scholarship.id),
-  );
+  const { savedScholarships, isLoading, error } = useSavedScholarships();
 
   return (
     <div>
@@ -30,6 +26,19 @@ export default function SavedPage() {
           <Bookmark size={12} /> {savedScholarships.length} saved
         </span>
       </div>
+      {error && (
+        <p
+          className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+      {isLoading && (
+        <p className="mt-5 text-sm text-[#858c9e]" role="status">
+          Loading your saved scholarships…
+        </p>
+      )}
       {savedScholarships.length > 0 && (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {savedScholarships.map((scholarship) => (
@@ -37,7 +46,7 @@ export default function SavedPage() {
           ))}
         </div>
       )}
-      {savedScholarships.length === 0 && (
+      {!isLoading && !error && savedScholarships.length === 0 && (
         <div className="mt-6 rounded-2xl border border-dashed border-[#ddd6fe] bg-white px-6 py-14 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#e0e7ff] text-[#6366f1]">
             <Bookmark size={20} />

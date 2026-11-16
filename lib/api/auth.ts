@@ -2,14 +2,11 @@ import { NextResponse } from "next/server";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { getDatabasePool } from "@/lib/db";
 
-export type AppRole = "student" | "content_admin";
-
 export type ApiUser = {
   id: string;
   firebase_uid: string;
   email: string;
   full_name: string | null;
-  role: AppRole;
 };
 
 type AuthResult =
@@ -83,7 +80,7 @@ export async function authenticateRequest(
          full_name = COALESCE(EXCLUDED.full_name, users.full_name),
          email = EXCLUDED.email,
          updated_at = CURRENT_TIMESTAMP
-       RETURNING id, firebase_uid, full_name, email, role`,
+       RETURNING id, firebase_uid, full_name, email`,
       [
         decodedToken.uid,
         typeof decodedToken.name === "string" ? decodedToken.name : null,
@@ -104,25 +101,6 @@ export async function authenticateRequest(
       ),
     };
   }
-}
-
-export async function requireRoles(
-  request: Request,
-  allowedRoles: readonly AppRole[],
-): Promise<AuthResult> {
-  const result = await authenticateRequest(request);
-  if (result.response) return result;
-
-  if (!allowedRoles.includes(result.user.role)) {
-    return {
-      response: NextResponse.json(
-        { error: "You do not have permission to perform this action." },
-        { status: 403 },
-      ),
-    };
-  }
-
-  return result;
 }
 
 export function isResponse(

@@ -8,7 +8,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { FirebaseError } from "@/lib/firebase";
 import { auth } from "@/lib/firebase";
 import {
-  type AppRole,
   googleLogin,
   loginUser,
   logoutUser,
@@ -17,10 +16,6 @@ import {
 } from "@/lib/auth";
 
 type AuthMode = "sign-in" | "sign-up";
-
-function getPostLoginPath(role: AppRole) {
-  return role === "student" ? "/dashboard" : "/admin";
-}
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof FirebaseError) {
@@ -74,9 +69,9 @@ export default function AuthPanel() {
           if (currentUser) {
             setIsSyncingProfile(true);
             syncUserProfile(currentUser)
-              .then((profile) => {
+              .then(() => {
                 setProfileSaved(true);
-                router.replace(getPostLoginPath(profile.role));
+                router.replace("/dashboard");
               })
               .catch((error: unknown) => {
                 setErrorMessage(getErrorMessage(error));
@@ -102,15 +97,14 @@ export default function AuthPanel() {
     setProfileSaved(false);
 
     try {
-      let profile: Awaited<ReturnType<typeof syncUserProfile>>;
       if (mode === "sign-up") {
         const signedInUser = await registerUser(email, password, name);
-        profile = await syncUserProfile(signedInUser);
+        await syncUserProfile(signedInUser);
       } else {
         const signedInUser = await loginUser(email, password);
-        profile = await syncUserProfile(signedInUser);
+        await syncUserProfile(signedInUser);
       }
-      router.replace(getPostLoginPath(profile.role));
+      router.replace("/dashboard");
       setProfileSaved(true);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
@@ -126,8 +120,8 @@ export default function AuthPanel() {
 
     try {
       const signedInUser = await googleLogin();
-      const profile = await syncUserProfile(signedInUser);
-      router.replace(getPostLoginPath(profile.role));
+      await syncUserProfile(signedInUser);
+      router.replace("/dashboard");
       setProfileSaved(true);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));

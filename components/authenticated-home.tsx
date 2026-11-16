@@ -3,7 +3,6 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { getUserRole } from "@/lib/auth";
 import { auth } from "@/lib/firebase";
 
 export default function AuthenticatedHome({
@@ -21,17 +20,9 @@ export default function AuthenticatedHome({
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
+        if (!active) return;
         if (user) {
-          getUserRole(user)
-            .then((role) => {
-              if (!active) return;
-              router.replace(
-                role === "student" ? "/dashboard" : "/admin",
-              );
-            })
-            .catch(() => {
-              if (active) setStatus("error");
-            });
+          router.replace("/dashboard");
           return;
         }
 

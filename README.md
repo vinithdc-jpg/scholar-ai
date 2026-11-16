@@ -34,16 +34,13 @@ Firebase Admin reads credentials from `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBA
 
 The browser obtains tokens with Firebase `user.getIdToken()`, which refreshes expired tokens automatically, and sends them in the `Authorization: Bearer <token>` header.
 
-## Roles and admin access
+## Community scholarship submissions
 
-Roles are stored in PostgreSQL and are never accepted from browser input.
-Protected API routes verify Firebase ID tokens and read the user's current
-database role; scholarship and document mutations require the `content_admin`
-role. Content admins can add and revoke other admin accounts in the Admin
-workspace. For safety, admins cannot revoke their own access or remove the
-last remaining admin.
-
-Run `npm run db:migrate` to update existing installations. The migration converts existing `super_admin` accounts to `content_admin` and removes the `super_admin` role from the database constraint.
+Any signed-in user can submit a scholarship through the community submission
+form. Submissions appear in the catalog labeled as community-submitted and
+unverified, with an official source link so students can review the information.
+The application has no admin workspace or admin-only scholarship management
+routes.
 
 ## Database and environment setup
 

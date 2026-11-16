@@ -115,8 +115,8 @@ export default function SubmitScholarshipPage() {
         </h1>
         <p className="mt-2 text-[12px] leading-5 text-[#858c9e]">
           Share an opportunity with other students. It will appear in the catalog
-          immediately and be labeled as community-submitted until an admin
-          verifies it.
+          immediately and be labeled as community-submitted so students can
+          review its official source.
         </p>
       </div>
 

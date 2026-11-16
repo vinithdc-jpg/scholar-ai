@@ -1,21 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
-  ArrowUpRight,
   Bot,
   Check,
   ChevronDown,
   CornerDownLeft,
-  FileText,
   Plus,
   Send,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { Surface } from "@/components/ui";
+import { apiRequest } from "@/lib/api/client";
 
 type Message = { role: "assistant" | "student"; text: string };
+type ChatSession = {
+  id: number;
+  title: string;
+  updated_at: string;
+};
+type ApiChatMessage = {
+  role: "user" | "assistant" | "system";
+  content: string;
+};
 
 const suggestions = [
   "What scholarships can I apply for this month?",
@@ -23,49 +31,143 @@ const suggestions = [
   "What documents should I prepare?",
 ];
 
-const initialMessages: Message[] = [
-  {
-    role: "assistant",
-    text: "Hi Jordan! I’m here to make the scholarship search feel a little simpler. What would you like to work on today?",
-  },
-];
-
-function getReply(question: string) {
-  const text = question.toLowerCase();
-  if (text.includes("personal statement") || text.includes("essay")) {
-    return "A strong personal statement connects a specific moment from your experience to what you hope to do next. Start with one vivid example, explain what you learned, and make the connection to this scholarship’s goals. Keep the provider’s word limit in mind.";
-  }
-  if (text.includes("document")) {
-    return "It’s helpful to gather an up-to-date transcript, proof of enrollment, a short personal statement, and a reference contact. Requirements vary, so double-check each provider’s official checklist before you submit.";
-  }
-  if (text.includes("month") || text.includes("deadline")) {
-    return "From your current matches, Bright Futures Fellowship is due November 23, followed by Future STEM Leaders on December 5. You can compare the details and start a checklist in your application tracker.";
-  }
-  return "A good next step is to open the scholarship details and compare the eligibility requirements with your profile. I’d also recommend checking the provider’s official page for current deadlines and required documents.";
-}
-
 export default function AssistantPage() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [busySessionId, setBusySessionId] = useState<number | null>(null);
+  const [error, setError] = useState("");
+
+  const loadSessions = useCallback(async () => {
+    const result = await apiRequest<{ sessions: ChatSession[] }>(
+      "/api/ai/sessions?limit=100",
+    );
+    if (!Array.isArray(result.sessions)) {
+      throw new Error("The conversation list response is invalid.");
+    }
+    setSessions(result.sessions);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void loadSessions()
+        .catch((cause: unknown) => {
+          if (active) {
+            setError(
+              cause instanceof Error
+                ? cause.message
+                : "Unable to load conversations.",
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setIsLoadingSessions(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [loadSessions]);
+
+  async function openSession(session: ChatSession) {
+    setBusySessionId(session.id);
+    setError("");
+    try {
+      const result = await apiRequest<{
+        messages: ApiChatMessage[];
+      }>(`/api/ai/sessions/${session.id}`);
+      setActiveSessionId(session.id);
+      setMessages(
+        result.messages
+          .filter(
+            (message) => message.role === "assistant" || message.role === "user",
+          )
+          .map((message) => ({
+            role: message.role === "user" ? "student" : "assistant",
+            text: message.content,
+          })),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to open this conversation.",
+      );
+    } finally {
+      setBusySessionId(null);
+    }
+  }
+
+  async function deleteSession(sessionId: number) {
+    if (!window.confirm("Delete this saved conversation?")) return;
+    setBusySessionId(sessionId);
+    setError("");
+    try {
+      await apiRequest<{ success: boolean }>(`/api/ai/sessions/${sessionId}`, {
+        method: "DELETE",
+      });
+      setSessions((current) => current.filter((session) => session.id !== sessionId));
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        setMessages([]);
+      }
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to delete this conversation.",
+      );
+    } finally {
+      setBusySessionId(null);
+    }
+  }
+
+  async function sendQuestion(question: string) {
+    const trimmed = question.trim();
+    if (!trimmed || isSending) return;
+    setMessages((current) => [...current, { role: "student", text: trimmed }]);
+    setInput("");
+    setIsSending(true);
+    setError("");
+    try {
+      const result = await apiRequest<{
+        answer?: string;
+        response?: string;
+      }>("/api/ai/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: trimmed,
+          ...(activeSessionId ? { session_id: activeSessionId } : {}),
+        }),
+      });
+      const answer = result.answer ?? result.response;
+      if (!answer) {
+        throw new Error("The assistant returned an empty response.");
+      }
+      setMessages((current) => [...current, { role: "assistant", text: answer }]);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The assistant could not answer this question.",
+      );
+    } finally {
+      setIsSending(false);
+    }
+  }
 
   function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const question = input.trim();
-    if (!question) return;
-    setMessages((current) => [
-      ...current,
-      { role: "student", text: question },
-      { role: "assistant", text: getReply(question) },
-    ]);
-    setInput("");
+    void sendQuestion(input);
   }
 
   function chooseSuggestion(question: string) {
-    setMessages((current) => [
-      ...current,
-      { role: "student", text: question },
-      { role: "assistant", text: getReply(question) },
-    ]);
+    void sendQuestion(question);
   }
 
   return (
@@ -79,12 +181,16 @@ export default function AssistantPage() {
             Ask ScholarAI
           </h1>
           <p className="mt-2 text-[12px] text-[#858c9e]">
-            Get clear, grounded answers as you explore your next step.
+            Review saved conversations and send questions through the chat API.
           </p>
         </div>
         <button
           type="button"
-          onClick={() => setMessages(initialMessages)}
+          onClick={() => {
+            setActiveSessionId(null);
+            setMessages([]);
+            setError("");
+          }}
           className="inline-flex items-center gap-2 rounded-xl border border-[#ddd6fe] bg-white px-3 py-2 text-[10px] font-semibold text-[#6e758a] hover:border-[#e0e7ff] hover:text-[#6366f1]"
         >
           <Plus size={14} /> New conversation
@@ -102,10 +208,14 @@ export default function AssistantPage() {
                   ScholarAI Assistant
                 </p>
                 <p className="mt-0.5 flex items-center gap-1 text-[9px] text-[#6366f1]">
-                  <span className="size-1.5 rounded-full bg-[#6366f1]" /> Ready
-                  to help
+                  <span className={`size-1.5 rounded-full ${isSending ? "animate-pulse bg-amber-500" : "bg-[#6366f1]"}`} />
+                  {isSending ? "Sending request" : "API-backed chat"}
                 </p>
               </div>
+              <p className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-[10px] leading-5 text-amber-800">
+                Chat responses are currently unavailable: the API returns 503 until
+                grounded retrieval and citations are implemented.
+              </p>
             </div>
             <button
               type="button"
@@ -120,8 +230,15 @@ export default function AssistantPage() {
             aria-live="polite"
           >
             <div className="text-center text-[9px] text-[#a2a8b7]">
-              Today · Demo conversation
+              {activeSessionId
+                ? sessions.find((session) => session.id === activeSessionId)?.title
+                : "New conversation"}
             </div>
+            {error && (
+              <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] leading-5 text-rose-700" role="alert">
+                {error}
+              </p>
+            )}
             {messages.map((message, index) => (
               <div
                 key={`${index}-${message.role}`}
@@ -136,20 +253,6 @@ export default function AssistantPage() {
                   className={`max-w-[min(88%,570px)] rounded-2xl px-4 py-3 text-[11px] leading-5 sm:text-[12px] ${message.role === "assistant" ? "rounded-tl-md border border-[#ddd6fe] bg-white text-[#626a7f]" : "rounded-tr-md bg-[#6366f1] text-white"}`}
                 >
                   <p>{message.text}</p>
-                  {message.role === "assistant" && index > 0 && (
-                    <div className="mt-3 border-t border-[#ddd6fe] pt-2.5">
-                      <p className="mb-1.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-[#9ba1b0]">
-                        <FileText size={11} /> Sources to explore
-                      </p>
-                      <Link
-                        href="/scholarships"
-                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#6366f1] hover:underline"
-                      >
-                        Scholarship matches and deadlines{" "}
-                        <ArrowUpRight size={11} />
-                      </Link>
-                    </div>
-                  )}
                 </div>
                 {message.role === "student" && (
                   <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-[#ede9fe] text-[9px] font-bold text-[#626984]">
@@ -158,7 +261,7 @@ export default function AssistantPage() {
                 )}
               </div>
             ))}
-            {messages.length === 1 && (
+            {messages.length === 0 && (
               <div className="pt-4">
                 <p className="mb-2 text-[10px] font-semibold text-[#9097a8]">
                   A few things we can work on
@@ -195,7 +298,7 @@ export default function AssistantPage() {
               </span>
               <button
                 type="submit"
-                disabled={!input.trim()}
+                disabled={!input.trim() || isSending}
                 aria-label="Send message"
                 className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#6366f1] text-white transition hover:bg-[#312e81] disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -203,9 +306,9 @@ export default function AssistantPage() {
               </button>
             </label>
             <p className="mt-2 text-center text-[9px] text-[#a0a6b4]">
-              <Sparkles size={10} className="mr-1 inline" /> Answers are a
-              helpful starting point. Verify details with official scholarship
-              sources.
+              <Sparkles size={10} className="mr-1 inline" /> Assistant responses
+              are subject to available service configuration; verify details
+              with official scholarship sources.
             </p>
           </form>
         </Surface>
@@ -216,27 +319,39 @@ export default function AssistantPage() {
               Recent conversations
             </h2>
             <div className="mt-3 space-y-1">
-              {[
-                "Finding STEM scholarships",
-                "Application essay tips",
-                "Understanding eligibility",
-              ].map((item, index) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() =>
-                    setMessages([
-                      {
-                        role: "assistant",
-                        text: `Let’s pick up where you left off: ${item.toLowerCase()}. What would you like to explore?`,
-                      },
-                    ])
-                  }
-                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-[10px] ${index === 0 ? "bg-[#e0e7ff] font-semibold text-[#6366f1]" : "text-[#777f93] hover:bg-[#f5f3ff]"}`}
+              {isLoadingSessions && (
+                <p className="px-2 py-2 text-[10px] text-[#858c9e]" role="status">
+                  Loading conversations…
+                </p>
+              )}
+              {!isLoadingSessions && sessions.length === 0 && (
+                <p className="px-2 py-2 text-[10px] leading-5 text-[#858c9e]">
+                  No saved conversations yet.
+                </p>
+              )}
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 ${activeSessionId === session.id ? "bg-[#e0e7ff]" : "hover:bg-[#f5f3ff]"}`}
                 >
-                  <span className="size-1.5 rounded-full bg-[#6366f1]" />
-                  {item}
-                </button>
+                  <button
+                    type="button"
+                    disabled={busySessionId === session.id}
+                    onClick={() => void openSession(session)}
+                    className="min-w-0 flex-1 truncate py-2.5 text-left text-[10px] font-medium text-[#555d71] disabled:opacity-50"
+                  >
+                    {session.title}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busySessionId === session.id}
+                    onClick={() => void deleteSession(session.id)}
+                    aria-label={`Delete ${session.title}`}
+                    className="rounded p-1.5 text-[#9299aa] hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               ))}
             </div>
           </Surface>

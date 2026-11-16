@@ -27,11 +27,8 @@ currently implemented API route.
 | Student | `PUT` | `/api/students/profile` | Implemented |
 | Student | `GET` | `/api/students/dashboard` | Implemented |
 | Scholarships | `GET` | `/api/scholarships` | Implemented |
-| Scholarships | `POST` | `/api/scholarships` | Implemented |
 | Scholarships | `POST` | `/api/scholarship-submissions` | Implemented |
 | Scholarships | `GET` | `/api/scholarships/[id]` | Implemented |
-| Scholarships | `PATCH` | `/api/scholarships/[id]` | Implemented |
-| Scholarships | `DELETE` | `/api/scholarships/[id]` | Implemented |
 | Scholarships | `GET` | `/api/scholarships/search` | Implemented |
 | Scholarships | `GET` | `/api/scholarships/recommended` | Implemented |
 | Eligibility | `POST` | `/api/eligibility/check` | Implemented |
@@ -43,22 +40,12 @@ currently implemented API route.
 | Applications | `GET` | `/api/applications/[id]` | Implemented |
 | Applications | `PATCH` | `/api/applications/[id]` | Implemented |
 | Applications | `DELETE` | `/api/applications/[id]` | Implemented |
-| Documents | `POST` | `/api/documents/upload` | Implemented (Cloudinary required) |
 | Documents | `GET` | `/api/documents` | Implemented |
 | Documents | `GET` | `/api/documents/[id]` | Implemented |
-| Documents | `DELETE` | `/api/documents/[id]` | Implemented (Cloudinary required) |
 | AI assistant | `POST` | `/api/ai/chat` | Route present (RAG unavailable) |
 | AI assistant | `GET` | `/api/ai/sessions` | Implemented |
 | AI assistant | `GET` | `/api/ai/sessions/[id]` | Implemented |
 | AI assistant | `DELETE` | `/api/ai/sessions/[id]` | Implemented |
-| Admin | `GET` | `/api/admin/dashboard` | Implemented |
-| Admin | `GET` | `/api/admin/documents` | Implemented |
-| Admin | `POST` | `/api/admin/documents/[id]/ingest` | Route present (worker unavailable) |
-| Admin | `PATCH` | `/api/admin/documents/[id]/verify` | Implemented |
-| Admin | `GET` | `/api/admin/ingestion-jobs` | Implemented |
-| Admin | `GET` | `/api/admin/users` | Implemented |
-| Admin | `POST` | `/api/admin/users` | Implemented |
-| Admin | `PATCH` | `/api/admin/users/[id]` | Implemented |
 
 `[id]` is a dynamic route segment, replaced with the resource identifier.
 
@@ -106,7 +93,6 @@ No request body is required.
     "firebase_uid": "verified-firebase-uid",
     "full_name": "Example Student",
     "email": "student@example.com",
-    "role": "student",
     "created_at": "2026-01-01T00:00:00.000Z",
     "updated_at": "2026-01-01T00:00:00.000Z"
   }
@@ -161,16 +147,13 @@ application counts plus upcoming verified scholarships.
 `GET /api/scholarships` and `/api/scholarships/search` accept `page`, `limit`,
 `q`, `state`, `course`, `education_level`, and `scholarship_type` query
 parameters. Results include published, verified scholarships and published
-community submissions that are awaiting verification. Admin operations require
-the `content_admin` role. `POST` creates scholarships.
-`GET /[id]` reads a published scholarship (or any scholarship for admins);
-`PATCH` updates it; `DELETE` archives it. `GET /recommended` uses the signed-in
-student's profile to rank current published scholarships.
+community submissions that are awaiting verification. `GET /[id]` reads a
+published scholarship. `GET /recommended` uses the signed-in student's profile
+to rank current published scholarships.
 
 `POST /api/scholarship-submissions` lets any signed-in user publish a
 scholarship with an official HTTPS source URL. Submissions appear in the
-catalog immediately and are labeled community-submitted and unverified until
-an admin verifies or rejects them.
+catalog immediately and are labeled community-submitted and unverified.
 
 `POST /api/eligibility/check` accepts `{ "scholarship_id": number, "profile"?: object }`.
 If `profile` is omitted, the saved profile is used. It returns matched, failed,
@@ -188,23 +171,16 @@ application. Student ownership is enforced server-side.
 
 ### Documents
 
-`POST /api/documents/upload` accepts multipart form data with a PDF `file`,
-`title`, and `document_type`; optional fields are `scholarship_id`,
-`academic_year`, and `source_url`. File size is limited to 10 MiB. Configure
-Cloudinary to enable uploads and deletion. Students can access their own
-documents; admins can access all documents.
+`GET /api/documents` lists the authenticated user's own documents.
+`GET /api/documents/[id]` returns a document only when it belongs to the
+authenticated user. Document upload and deletion routes are not available.
 
-### AI and admin
+### AI
 
 Chat session listing, retrieval, and deletion are implemented. `POST
 /api/ai/chat` currently returns `503`: the grounded retrieval, embedding, and
 citation pipeline is not yet implemented. Document ingestion likewise returns
 `503` until its Redis/BullMQ worker is implemented.
-
-Admin endpoints require the `content_admin` role stored in PostgreSQL. Roles
-supplied by the client are never trusted. Content admins can create other
-content-admin accounts and revoke another admin's access; self-revocation and
-revocation of the final admin are rejected.
 
 List endpoints accept `page` (default `1`) and `limit` (default `20`, maximum
 `100`) unless otherwise specified. Protected endpoints require a valid Firebase

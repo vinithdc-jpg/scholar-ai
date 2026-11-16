@@ -21,6 +21,7 @@ import {
 } from "@/components/custom-fields";
 import { syncUserProfile } from "@/lib/auth";
 import { auth } from "@/lib/firebase";
+import ProfileDocuments from "@/components/profile-documents";
 
 type ProfileForm = {
   date_of_birth: string;
@@ -734,6 +735,7 @@ export default function ProfilePage() {
           </Surface>
         </form>
       </div>
+      <ProfileDocuments />
     </div>
   );
 }

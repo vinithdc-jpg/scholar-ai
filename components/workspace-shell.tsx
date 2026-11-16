@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  createContext,
-  useContext,
   useEffect,
   useState,
   useSyncExternalStore,
@@ -26,24 +24,15 @@ import {
   Moon,
   Plus,
   Search,
-  Settings2,
   ShieldCheck,
   Sun,
   UserRound,
   X,
 } from "lucide-react";
 import { useSavedScholarships } from "@/components/saved-scholarships-provider";
-import { getUserRole, logoutUser, type AppRole } from "@/lib/auth";
+import { logoutUser } from "@/lib/auth";
+import { apiRequest } from "@/lib/api/client";
 import { auth } from "@/lib/firebase";
-
-const WorkspaceRoleContext = createContext<{
-  role: AppRole | null;
-  isRoleLoading: boolean;
-}>({ role: null, isRoleLoading: true });
-
-export function useWorkspaceRole() {
-  return useContext(WorkspaceRoleContext);
-}
 
 function subscribeToTheme(callback: () => void) {
   window.addEventListener("scholarai-theme-change", callback);
@@ -116,10 +105,10 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const [role, setRole] = useState<AppRole | null>(null);
-  const [isRoleLoading, setIsRoleLoading] = useState(true);
-  const [roleError, setRoleError] = useState("");
-  const { savedIds } = useSavedScholarships();
+  const [authError, setAuthError] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
+  const { savedIds, error: savedError } = useSavedScholarships();
   const darkMode = useSyncExternalStore(
     subscribeToTheme,
     getThemeSnapshot,
@@ -135,39 +124,34 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        setIsRoleLoading(true);
-        setRole(null);
-        setRoleError("");
-
+        if (!active) return;
         if (!user) {
-          setRole(null);
-          setIsRoleLoading(false);
           router.replace("/login");
           return;
         }
-
-        getUserRole(user)
-          .then((userRole) => {
+        setAccountName(user.displayName ?? "");
+        setAccountEmail(user.email ?? "");
+        void apiRequest<{
+          user: { full_name: string | null; email: string };
+        }>("/api/auth/me")
+          .then((result) => {
             if (!active) return;
-            setRole(userRole);
-            setIsRoleLoading(false);
+            setAccountName(result.user.full_name ?? user.displayName ?? "");
+            setAccountEmail(result.user.email);
           })
           .catch((error: unknown) => {
-            if (!active) return;
-            setRole(null);
-            setRoleError(
-              error instanceof Error
-                ? error.message
-                : "Unable to verify your account role.",
-            );
-            setIsRoleLoading(false);
+            if (active) {
+              setAuthError(
+                error instanceof Error
+                  ? error.message
+                  : "Unable to load your account.",
+              );
+            }
           });
       },
       (error) => {
         if (!active) return;
-        setRole(null);
-        setRoleError(error.message);
-        setIsRoleLoading(false);
+        setAuthError(error.message);
       },
     );
 
@@ -176,11 +160,6 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, [router]);
-
-  useEffect(() => {
-    if (isRoleLoading || pathname !== "/admin") return;
-    if (role === "student") router.replace("/dashboard");
-  }, [isRoleLoading, pathname, role, router]);
 
   function toggleTheme() {
     const nextMode = !darkMode;
@@ -209,7 +188,6 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <WorkspaceRoleContext.Provider value={{ role, isRoleLoading }}>
       <div className="workspace-canvas min-h-screen bg-[#f5f3ff] dark:bg-[#10131d]">
       <div
         className={`fixed inset-0 z-40 bg-[#151a2a]/40 transition-opacity md:hidden ${
@@ -283,20 +261,6 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
               onNavigate={closeMenu}
             />
           ))}
-          {role === "content_admin" ? (
-            <Link
-              href="/admin"
-              onClick={closeMenu}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                pathname === "/admin"
-                  ? "bg-[#6366f1] text-white"
-                  : "text-indigo-100 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <Settings2 size={17} />
-              Admin workspace
-            </Link>
-          ) : null}
         </nav>
 
         {logoutError && (
@@ -354,16 +318,30 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             </Link>
             <div className="hidden h-7 w-px bg-white/20 sm:block" />
             <Link href="/profile" className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-full bg-white/15 text-[11px] font-bold text-white">JD</span>
-              <span className="hidden text-[12px] font-semibold text-white sm:block">Jordan Davis</span>
+              <span className="grid size-8 place-items-center rounded-full bg-white/15 text-[11px] font-bold text-white">
+                {accountName
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0]?.toUpperCase())
+                  .join("") || "?"}
+              </span>
+              <span className="hidden text-[12px] font-semibold text-white sm:block">
+                {accountName || accountEmail || "My account"}
+              </span>
               <ChevronDown size={14} className="hidden text-indigo-200 sm:block" />
             </Link>
           </div>
         </header>
         <main className="mx-auto w-full max-w-375 px-4 py-6 sm:px-7 sm:py-8 lg:px-9">
-          {roleError && (
+          {authError && (
             <p className="text-sm text-rose-600" role="alert">
-              {roleError}
+              {authError}
+            </p>
+          )}
+          {savedError && (
+            <p className="mb-3 text-sm text-rose-600" role="alert">
+              {savedError}
             </p>
           )}
           {children}
@@ -374,6 +352,5 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
         </main>
       </div>
       </div>
-    </WorkspaceRoleContext.Provider>
   );
 }

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { authenticateRequest, isResponse, requireRoles } from "@/lib/api/auth";
-import { databaseError, readJson } from "@/lib/api/http";
-import { scholarshipFields, scholarshipSchema } from "@/lib/api/scholarships";
+import { authenticateRequest, isResponse } from "@/lib/api/auth";
+import { databaseError } from "@/lib/api/http";
+import { scholarshipFields } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -25,91 +25,9 @@ export async function GET(request: Request, context: RouteContext) {
       `SELECT id, ${scholarshipFields.join(", ")},
          submitted_by IS NOT NULL AND verification_status = 'pending' AS is_community_submitted
        FROM scholarships WHERE id = $1
-       AND (status = 'published'
-         AND (verification_status = 'verified'
-           OR (submitted_by IS NOT NULL AND verification_status = 'pending'))
-         OR $2)`,
-      [
-        id.data,
-        auth.user.role === "content_admin",
-      ],
-    );
-    if (!result.rowCount) {
-      return NextResponse.json(
-        { error: "Scholarship not found." },
-        { status: 404 },
-      );
-    }
-    return NextResponse.json({ scholarship: result.rows[0] });
-  } catch (error) {
-    return databaseError("Unable to load scholarship.", error);
-  }
-}
-
-export async function PATCH(request: Request, context: RouteContext) {
-  const auth = await requireRoles(request, ["content_admin"]);
-  if (isResponse(auth)) return auth.response;
-  const { id: rawId } = await context.params;
-  const id = idSchema.safeParse(rawId);
-  if (!id.success) {
-    return NextResponse.json(
-      { error: "Invalid scholarship ID." },
-      { status: 400 },
-    );
-  }
-  const parsed = await readJson(request, scholarshipSchema.partial());
-  if (parsed.response) return parsed.response;
-  if (!Object.keys(parsed.data).length) {
-    return NextResponse.json(
-      { error: "Provide at least one field to update." },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const fields = scholarshipFields.filter((field) =>
-      Object.hasOwn(parsed.data, field),
-    );
-    const values = fields.map((field) =>
-      field === "benefits"
-        ? JSON.stringify(parsed.data[field])
-        : parsed.data[field],
-    );
-    const result = await getDatabasePool().query(
-      `UPDATE scholarships SET
-         ${fields.map((field, index) => `${field} = $${index + 1}`).join(", ")},
-         updated_at = CURRENT_TIMESTAMP
-       WHERE id = $${values.length + 1} RETURNING *`,
-      [...values, id.data],
-    );
-    if (!result.rowCount) {
-      return NextResponse.json(
-        { error: "Scholarship not found." },
-        { status: 404 },
-      );
-    }
-    return NextResponse.json({ scholarship: result.rows[0] });
-  } catch (error) {
-    return databaseError("Unable to update scholarship.", error);
-  }
-}
-
-export async function DELETE(request: Request, context: RouteContext) {
-  const auth = await requireRoles(request, ["content_admin"]);
-  if (isResponse(auth)) return auth.response;
-  const { id: rawId } = await context.params;
-  const id = idSchema.safeParse(rawId);
-  if (!id.success) {
-    return NextResponse.json(
-      { error: "Invalid scholarship ID." },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const result = await getDatabasePool().query(
-      `UPDATE scholarships SET status = 'archived', updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1 RETURNING id, status`,
+       AND status = 'published'
+       AND (verification_status = 'verified'
+         OR (submitted_by IS NOT NULL AND verification_status = 'pending'))`,
       [id.data],
     );
     if (!result.rowCount) {
@@ -120,6 +38,6 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
     return NextResponse.json({ scholarship: result.rows[0] });
   } catch (error) {
-    return databaseError("Unable to archive scholarship.", error);
+    return databaseError("Unable to load scholarship.", error);
   }
 }

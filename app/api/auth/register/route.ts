@@ -52,6 +52,9 @@ export async function POST(request: Request) {
         "Firebase did not return a complete sign-in result after registration.",
       );
     }
+    const customToken = await getFirebaseAdminAuth().createCustomToken(
+      namedAuthResult.localId,
+    );
 
     let profile;
     try {
@@ -93,6 +96,7 @@ export async function POST(request: Request) {
         idToken: namedAuthResult.idToken,
         refreshToken: namedAuthResult.refreshToken,
         expiresIn: namedAuthResult.expiresIn,
+        customToken,
       },
       { status: 201 },
     );

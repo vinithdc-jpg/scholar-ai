@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { authenticateRequest, isResponse, requireRoles } from "@/lib/api/auth";
-import { getPagination, databaseError, readJson } from "@/lib/api/http";
-import {
-  normalizeScholarshipInput,
-  scholarshipFields,
-  scholarshipSchema,
-} from "@/lib/api/scholarships";
+import { authenticateRequest, isResponse } from "@/lib/api/auth";
+import { getPagination, databaseError } from "@/lib/api/http";
+import { scholarshipFields } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
-
-const createSchema = scholarshipSchema.extend({
-  name: z.string().trim().min(1).max(255),
-  provider: z.string().trim().min(1).max(255),
-});
 
 export async function GET(request: Request) {
   const auth = await authenticateRequest(request);
@@ -34,7 +24,12 @@ export async function GET(request: Request) {
   if (search) {
     values.push(`%${search}%`);
     filters.push(
-      `(name ILIKE $${values.length} OR provider ILIKE $${values.length})`,
+      `(name ILIKE $${values.length}
+        OR provider ILIKE $${values.length}
+        OR description ILIKE $${values.length}
+        OR scholarship_type ILIKE $${values.length}
+        OR array_to_string(eligible_courses, ' ') ILIKE $${values.length}
+        OR array_to_string(education_levels, ' ') ILIKE $${values.length})`,
     );
   }
   const state = url.searchParams.get("state");
@@ -67,25 +62,5 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     return databaseError("Unable to list scholarships.", error);
-  }
-}
-
-export async function POST(request: Request) {
-  const auth = await requireRoles(request, ["content_admin"]);
-  if (isResponse(auth)) return auth.response;
-  const parsed = await readJson(request, createSchema);
-  if (parsed.response) return parsed.response;
-
-  const values = normalizeScholarshipInput(parsed.data);
-  try {
-    const result = await getDatabasePool().query(
-      `INSERT INTO scholarships (${scholarshipFields.join(", ")})
-       VALUES (${values.map((_, index) => `$${index + 1}`).join(", ")})
-       RETURNING *`,
-      values,
-    );
-    return NextResponse.json({ scholarship: result.rows[0] }, { status: 201 });
-  } catch (error) {
-    return databaseError("Unable to create scholarship.", error);
   }
 }

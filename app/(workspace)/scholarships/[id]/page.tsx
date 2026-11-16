@@ -1,6 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import SaveScholarshipButton from "@/components/save-scholarship-button";
 import {
   ArrowLeft,
@@ -19,20 +22,14 @@ import {
 } from "lucide-react";
 import { Pill, Surface } from "@/components/ui";
 import { scholarships } from "@/lib/sample-data";
-import { getDatabasePool } from "@/lib/db";
-import { scholarshipFields } from "@/lib/api/scholarships";
+import { apiRequest } from "@/lib/api/client";
 import {
   toScholarshipDisplay,
   type ScholarshipRecord,
 } from "@/lib/scholarship-display";
 
-type ScholarshipDetailsProps = {
-  params: Promise<{ id: string }>;
-};
-
-export default function ScholarshipDetailsPage({
-  params,
-}: ScholarshipDetailsProps) {
+export default function ScholarshipDetailsPage() {
+  const { id } = useParams<{ id: string }>();
   return (
     <Suspense
       fallback={
@@ -48,29 +45,126 @@ export default function ScholarshipDetailsPage({
         </div>
       }
     >
-      <ScholarshipDetailsContent params={params} />
+      <ScholarshipDetailsContent key={id} id={id} />
     </Suspense>
   );
 }
 
-async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
-  const { id } = await params;
-  let scholarship = scholarships.find((item) => item.id === id);
-  if (!scholarship && /^\d+$/.test(id)) {
-    const result = await getDatabasePool().query<ScholarshipRecord>(
-      `SELECT id, ${scholarshipFields.join(", ")},
-       submitted_by IS NOT NULL AND verification_status = 'pending' AS is_community_submitted
-       FROM scholarships
-       WHERE id = $1 AND status = 'published'
-         AND (verification_status = 'verified'
-           OR (submitted_by IS NOT NULL AND verification_status = 'pending'))`,
-      [id],
-    );
-    if (result.rows[0]) {
-      scholarship = toScholarshipDisplay(result.rows[0]);
+function ScholarshipDetailsContent({ id }: { id: string }) {
+  const sampleScholarship = scholarships.find((item) => item.id === id);
+  const [scholarship, setScholarship] = useState(sampleScholarship);
+  const [isLoading, setIsLoading] = useState(!sampleScholarship);
+  const [error, setError] = useState("");
+  const [applicationId, setApplicationId] = useState<number | null>(null);
+  const [isCheckingApplication, setIsCheckingApplication] = useState(
+    /^\d+$/.test(id),
+  );
+  const [isStartingApplication, setIsStartingApplication] = useState(false);
+  const [applicationMessage, setApplicationMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    if (sampleScholarship) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void apiRequest<{ scholarship: ScholarshipRecord }>(
+      `/api/scholarships/${encodeURIComponent(id)}`,
+    )
+      .then((result) => {
+        if (active) setScholarship(toScholarshipDisplay(result.scholarship));
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Unable to load this scholarship.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, sampleScholarship]);
+
+  useEffect(() => {
+    if (!/^\d+$/.test(id)) return;
+    let active = true;
+    void apiRequest<{
+      applications: { id: number; scholarship_id: number }[];
+    }>("/api/applications?limit=100")
+      .then((result) => {
+        const application = result.applications.find(
+          (item) => item.scholarship_id === Number(id),
+        );
+        if (active) setApplicationId(application?.id ?? null);
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setApplicationMessage(
+            cause instanceof Error
+              ? cause.message
+              : "Application status is unavailable.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setIsCheckingApplication(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  async function startApplication() {
+    if (!scholarship || !/^\d+$/.test(scholarship.id)) {
+      setApplicationMessage("This sample opportunity cannot be added to your tracker.");
+      return;
+    }
+    setIsStartingApplication(true);
+    setApplicationMessage("");
+    try {
+      const result = await apiRequest<{ application: { id: number } }>(
+        "/api/applications",
+        {
+          method: "POST",
+          body: JSON.stringify({ scholarship_id: Number(scholarship.id) }),
+        },
+      );
+      setApplicationId(result.application.id);
+      setApplicationMessage("Added to your application tracker.");
+    } catch (cause) {
+      setApplicationMessage(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to start this application.",
+      );
+    } finally {
+      setIsStartingApplication(false);
     }
   }
-  if (!scholarship) notFound();
+
+  if (isLoading) {
+    return <p className="py-12 text-center text-sm text-[#858c9e]" role="status">Loading scholarship details…</p>;
+  }
+  if (!scholarship) {
+    return (
+      <div className="rounded-2xl bg-white p-8 text-center">
+        <p className="text-sm font-semibold text-[#0f172a]">
+          {error || "Scholarship not found."}
+        </p>
+        <Link href="/scholarships" className="mt-4 inline-block text-sm font-semibold text-[#6366f1]">
+          Back to scholarships
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-262.5">
@@ -114,8 +208,7 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                   </div>
                 </div>
                 <SaveScholarshipButton
-                  scholarshipId={scholarship.id}
-                  scholarshipName={scholarship.name}
+                  scholarship={scholarship}
                 />
               </div>
               <p className="mt-6 text-[12px] leading-6 text-[#747c91]">
@@ -293,6 +386,32 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
                 : "View official source"}{" "}
               <ExternalLink size={14} />
             </a>
+            {applicationId ? (
+              <Link
+                href="/applications"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#ddd6fe] px-4 py-2.5 text-[11px] font-semibold text-[#666d80] hover:bg-[#e0e7ff]"
+              >
+                View application tracker <ArrowUpRight size={13} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void startApplication()}
+                disabled={isStartingApplication || isCheckingApplication}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#ddd6fe] px-4 py-2.5 text-[11px] font-semibold text-[#666d80] hover:bg-[#e0e7ff] disabled:cursor-wait disabled:opacity-60"
+              >
+                {isCheckingApplication
+                  ? "Checking tracker…"
+                  : isStartingApplication
+                    ? "Starting…"
+                    : "Start application"}
+              </button>
+            )}
+            {applicationMessage && (
+              <p className="mt-2 text-center text-[10px] text-[#747c91]" role="status">
+                {applicationMessage}
+              </p>
+            )}
             <p className="mt-2 text-center text-[9px] leading-4 text-[#9ba1b0]">
               {scholarship.isCommunitySubmitted
                 ? "Community-submitted and not yet verified. Confirm details with the provider."
@@ -332,7 +451,7 @@ async function ScholarshipDetailsContent({ params }: ScholarshipDetailsProps) {
             </a>
           </Surface>
           <Link
-            href="/eligibility"
+            href={`/eligibility?scholarship_id=${encodeURIComponent(scholarship.id)}`}
             className="flex items-center gap-3 rounded-2xl border border-[#e0e7ff] bg-[#e0e7ff] p-4 transition hover:bg-[#e0e7ff]"
           >
             <span className="grid size-9 place-items-center rounded-xl bg-white text-[#6366f1]">

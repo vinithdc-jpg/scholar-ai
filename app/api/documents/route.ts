@@ -7,7 +7,6 @@ export async function GET(request: Request) {
   const auth = await authenticateRequest(request);
   if (isResponse(auth)) return auth.response;
   const { page, limit, offset } = getPagination(new URL(request.url));
-  const isAdmin = auth.user.role !== "student";
 
   try {
     const result = await getDatabasePool().query(
@@ -15,11 +14,10 @@ export async function GET(request: Request) {
               cloudinary_secure_url, original_filename, mime_type, file_size,
               page_count, source_url, academic_year, version,
               verification_status, processing_status, uploaded_by, created_at
-       FROM scholarship_documents
-       ${isAdmin ? "" : "WHERE uploaded_by = $1"}
+       FROM scholarship_documents WHERE uploaded_by = $1
        ORDER BY created_at DESC
-       LIMIT $${isAdmin ? 1 : 2} OFFSET $${isAdmin ? 2 : 3}`,
-      isAdmin ? [limit, offset] : [auth.user.id, limit, offset],
+       LIMIT $2 OFFSET $3`,
+      [auth.user.id, limit, offset],
     );
     return NextResponse.json({
       documents: result.rows,

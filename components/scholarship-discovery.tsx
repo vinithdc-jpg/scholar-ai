@@ -13,17 +13,17 @@ import {
 } from "lucide-react";
 import ScholarshipCard from "@/components/scholarship-card";
 import { CustomSelect } from "@/components/custom-fields";
-import { scholarships } from "@/lib/sample-data";
 import {
   toScholarshipDisplay,
   type ScholarshipRecord,
 } from "@/lib/scholarship-display";
 import type { Scholarship } from "@/lib/sample-data";
+import { apiRequest } from "@/lib/api/client";
 import { auth } from "@/lib/firebase";
 
 type ScholarshipListResponse = {
-  error?: string;
   scholarships?: ScholarshipRecord[];
+  pagination?: { total: number };
 };
 
 const categories = [
@@ -42,76 +42,86 @@ export default function ScholarshipDiscovery({
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("All opportunities");
   const [sortBy, setSortBy] = useState("Best match");
-  const [submittedScholarships, setSubmittedScholarships] = useState<
-    Scholarship[]
-  >([]);
+  const [page, setPage] = useState(1);
+  const [educationLevel, setEducationLevel] = useState("");
+  const [course, setCourse] = useState("");
+  const [state, setState] = useState("");
+  const [scholarshipType, setScholarshipType] = useState("");
+  const [user, setUser] = useState<User | null>(auth.currentUser);
+  const [catalogScholarships, setCatalogScholarships] = useState<Scholarship[]>(
+    [],
+  );
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    let active = true;
-
-    async function loadScholarships(user: User) {
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch("/api/scholarships?limit=100", {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const result = (await response.json()) as ScholarshipListResponse;
-        if (!response.ok) {
-          throw new Error(result.error ?? "Unable to load submitted scholarships.");
-        }
-        if (!Array.isArray(result.scholarships)) {
-          throw new Error("The scholarship list response is invalid.");
-        }
-        if (active) {
-          setSubmittedScholarships(
-            result.scholarships.map(toScholarshipDisplay),
-          );
-        }
-      } catch (error) {
-        if (active) {
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : "Unable to load submitted scholarships.",
-          );
-        }
-      }
-    }
-
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        if (user) void loadScholarships(user);
-      },
-      (error) => {
-        if (active) setLoadError(error.message);
-      },
+    return onAuthStateChanged(auth, setUser, (error) =>
+      setLoadError(error.message),
     );
-    return () => {
-      active = false;
-      unsubscribe();
-    };
   }, []);
 
-  const allScholarships = useMemo(
-    () => [...submittedScholarships, ...scholarships],
-    [submittedScholarships],
-  );
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: "20",
+      });
+      if (query.trim()) params.set("q", query.trim());
+      if (educationLevel) params.set("education_level", educationLevel);
+      if (course) params.set("course", course);
+      if (state.trim()) params.set("state", state.trim());
+      if (scholarshipType) params.set("scholarship_type", scholarshipType);
+      setIsLoading(true);
+      setLoadError("");
+      void apiRequest<ScholarshipListResponse>(
+        `/api/scholarships/search?${params.toString()}`,
+      )
+        .then((result) => {
+          if (!Array.isArray(result.scholarships)) {
+            throw new Error("The scholarship list response is invalid.");
+          }
+          if (active) {
+            setCatalogScholarships(result.scholarships.map(toScholarshipDisplay));
+            setTotal(result.pagination?.total ?? result.scholarships.length);
+          }
+        })
+        .catch((cause: unknown) => {
+          if (active) {
+            setLoadError(
+              cause instanceof Error
+                ? cause.message
+                : "Unable to load scholarships.",
+            );
+            setCatalogScholarships([]);
+            setTotal(0);
+          }
+        })
+        .finally(() => {
+          if (active) setIsLoading(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query, educationLevel, course, state, scholarshipType, page, user]);
+
   const availableCategories = useMemo(
     () => [
       ...categories.slice(0, 1),
       ...new Set([
         ...categories.slice(1),
-        ...submittedScholarships.map((scholarship) => scholarship.category),
+        ...catalogScholarships.map((scholarship) => scholarship.category),
       ]),
     ],
-    [submittedScholarships],
+    [catalogScholarships],
   );
   const filteredScholarships = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const filtered = allScholarships.filter((scholarship) => {
+    const filtered = catalogScholarships.filter((scholarship) => {
       const matchesCategory =
         category === "All opportunities" || scholarship.category === category;
       const matchesQuery =
@@ -132,7 +142,7 @@ export default function ScholarshipDiscovery({
     return [...filtered].sort(
       (a, b) => (b.match ?? -1) - (a.match ?? -1),
     );
-  }, [allScholarships, category, query, sortBy]);
+  }, [catalogScholarships, category, query, sortBy]);
 
   return (
     <div>
@@ -177,7 +187,10 @@ export default function ScholarshipDiscovery({
             />
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
               placeholder="Search by name, field, or provider..."
               aria-label="Search scholarships"
               className="workspace-input h-11 w-full rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] pl-10 pr-10 text-[12px] text-[#384057] outline-none placeholder:text-[#a0a6b5] focus:border-[#a5b4fc] focus:bg-white"
@@ -215,7 +228,10 @@ export default function ScholarshipDiscovery({
             <button
               key={item}
               type="button"
-              onClick={() => setCategory(item)}
+              onClick={() => {
+                setCategory(item);
+                setPage(1);
+              }}
               aria-pressed={category === item}
               className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ${category === item ? "border-[#6366f1] bg-[#6366f1] text-white" : "border-[#ddd6fe] bg-white text-[#70788d] hover:border-[#e0e7ff] hover:text-[#6366f1]"}`}
             >
@@ -223,13 +239,84 @@ export default function ScholarshipDiscovery({
             </button>
           ))}
         </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <CustomSelect
+            value={educationLevel}
+            onValueChange={(value) => {
+              setEducationLevel(value);
+              setPage(1);
+            }}
+            ariaLabel="Filter by education level"
+            options={[
+              { value: "", label: "Any education level" },
+              ...[
+                "High school",
+                "Undergraduate",
+                "Graduate",
+                "Doctoral",
+                "Trade or vocational",
+              ].map((value) => ({ value, label: value })),
+            ]}
+            className="text-[11px]"
+          />
+          <CustomSelect
+            value={course}
+            onValueChange={(value) => {
+              setCourse(value);
+              setPage(1);
+            }}
+            ariaLabel="Filter by field of study"
+            options={[
+              { value: "", label: "Any field of study" },
+              ...[
+                "Computer Science",
+                "Engineering",
+                "Business",
+                "Education",
+                "Health Sciences",
+                "Arts & Humanities",
+              ].map((value) => ({ value, label: value })),
+            ]}
+            className="text-[11px]"
+          />
+          <label className="sr-only" htmlFor="scholarship-state">
+            Filter by eligible state
+          </label>
+          <input
+            id="scholarship-state"
+            value={state}
+            onChange={(event) => {
+              setState(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Any eligible state"
+            className="workspace-input h-10 rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] px-3 text-[11px] text-[#384057] outline-none placeholder:text-[#858c9e] focus:border-[#a5b4fc] focus:bg-white"
+          />
+          <CustomSelect
+            value={scholarshipType}
+            onValueChange={(value) => {
+              setScholarshipType(value);
+              setPage(1);
+            }}
+            ariaLabel="Filter by scholarship type"
+            options={[
+              { value: "", label: "Any scholarship type" },
+              ...["Merit", "Need-based", "STEM", "Community"].map(
+                (value) => ({ value, label: value }),
+              ),
+            ]}
+            className="text-[11px]"
+          />
+        </div>
       </div>
       <div className="mb-4 mt-7 flex items-center justify-between">
         <p className="text-[12px] text-[#81889a]">
           <strong className="font-bold text-[#3d4359] dark:text-white">
             {filteredScholarships.length} opportunities
           </strong>{" "}
-          for your profile
+          {total > filteredScholarships.length
+            ? `from ${total} matching published scholarships`
+            : "for your profile"}
         </p>
         <button
           type="button"
@@ -237,18 +324,52 @@ export default function ScholarshipDiscovery({
             setCategory("All opportunities");
             setQuery("");
             setSortBy("Best match");
+            setPage(1);
+            setEducationLevel("");
+            setCourse("");
+            setState("");
+            setScholarshipType("");
           }}
           className="text-[10px] font-semibold text-[#6366f1] hover:underline"
         >
           Reset filters
         </button>
       </div>
-      {filteredScholarships.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredScholarships.map((scholarship) => (
-            <ScholarshipCard key={scholarship.id} scholarship={scholarship} />
-          ))}
-        </div>
+      {isLoading ? (
+        <p className="py-10 text-center text-sm text-[#858c9e]" role="status">
+          Searching published scholarships…
+        </p>
+      ) : filteredScholarships.length > 0 ? (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredScholarships.map((scholarship) => (
+              <ScholarshipCard key={scholarship.id} scholarship={scholarship} />
+            ))}
+          </div>
+          {total > 20 && (
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                disabled={page === 1 || isLoading}
+                onClick={() => setPage((current) => current - 1)}
+                className="rounded-lg border border-[#ddd6fe] px-3 py-2 text-[10px] font-semibold text-[#6366f1] disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-[10px] text-[#858c9e]">
+                Page {page} of {Math.ceil(total / 20)}
+              </span>
+              <button
+                type="button"
+                disabled={page >= Math.ceil(total / 20) || isLoading}
+                onClick={() => setPage((current) => current + 1)}
+                className="rounded-lg border border-[#ddd6fe] px-3 py-2 text-[10px] font-semibold text-[#6366f1] disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="rounded-2xl border border-dashed border-[#ddd6fe] bg-white px-6 py-14 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#e0e7ff] text-[#6366f1]">
@@ -265,6 +386,11 @@ export default function ScholarshipDiscovery({
             onClick={() => {
               setCategory("All opportunities");
               setQuery("");
+              setPage(1);
+              setEducationLevel("");
+              setCourse("");
+              setState("");
+              setScholarshipType("");
             }}
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#6366f1] px-4 py-2.5 text-[11px] font-bold text-white"
           >

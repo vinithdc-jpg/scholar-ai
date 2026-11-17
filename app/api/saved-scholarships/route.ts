@@ -4,6 +4,10 @@ import { authenticateRequest, isResponse } from "@/lib/api/auth";
 import { databaseError, getPagination, readJson } from "@/lib/api/http";
 import { scholarshipFields } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
+import {
+  addScholarshipDocumentUrls,
+  storageError,
+} from "@/lib/supabase-storage";
 
 const schema = z.object({ scholarship_id: z.number().int().positive() });
 
@@ -15,17 +19,28 @@ export async function GET(request: Request) {
   try {
     const result = await getDatabasePool().query(
       `SELECT ss.id AS saved_id, ss.created_at AS saved_at,
-              s.id, ${scholarshipFields.map((field) => `s.${field}`).join(", ")}
+              s.id, ${scholarshipFields.map((field) => `s.${field}`).join(", ")},
+              (SELECT d.storage_bucket FROM scholarship_documents d
+               WHERE d.scholarship_id = s.id AND d.storage_path IS NOT NULL
+               ORDER BY d.created_at DESC LIMIT 1) AS document_storage_bucket,
+              (SELECT d.storage_path FROM scholarship_documents d
+               WHERE d.scholarship_id = s.id AND d.storage_path IS NOT NULL
+               ORDER BY d.created_at DESC LIMIT 1) AS document_storage_path
        FROM saved_scholarships ss
        JOIN scholarships s ON s.id = ss.scholarship_id
        WHERE ss.user_id = $1
        ORDER BY ss.created_at DESC LIMIT $2 OFFSET $3`,
       [auth.user.id, limit, offset],
     );
-    return NextResponse.json({
-      scholarships: result.rows,
-      pagination: { page, limit },
-    });
+    try {
+      const scholarships = await addScholarshipDocumentUrls(result.rows);
+      return NextResponse.json({
+        scholarships,
+        pagination: { page, limit },
+      });
+    } catch (error) {
+      return storageError("Unable to create scholarship document links.", error);
+    }
   } catch (error) {
     return databaseError("Unable to load saved scholarships.", error);
   }

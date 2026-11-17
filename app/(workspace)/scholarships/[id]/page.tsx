@@ -124,7 +124,9 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
 
   async function startApplication() {
     if (!scholarship || !/^\d+$/.test(scholarship.id)) {
-      setApplicationMessage("This sample opportunity cannot be added to your tracker.");
+      setApplicationMessage(
+        "This sample opportunity cannot be added to your tracker.",
+      );
       return;
     }
     setIsStartingApplication(true);
@@ -151,7 +153,11 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
   }
 
   if (isLoading) {
-    return <p className="py-12 text-center text-sm text-[#858c9e]" role="status">Loading scholarship details…</p>;
+    return (
+      <p className="py-12 text-center text-sm text-[#858c9e]" role="status">
+        Loading scholarship details…
+      </p>
+    );
   }
   if (!scholarship) {
     return (
@@ -159,7 +165,10 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
         <p className="text-sm font-semibold text-[#0f172a]">
           {error || "Scholarship not found."}
         </p>
-        <Link href="/scholarships" className="mt-4 inline-block text-sm font-semibold text-[#6366f1]">
+        <Link
+          href="/scholarships"
+          className="mt-4 inline-block text-sm font-semibold text-[#6366f1]"
+        >
           Back to scholarships
         </Link>
       </div>
@@ -207,9 +216,7 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
                     </div>
                   </div>
                 </div>
-                <SaveScholarshipButton
-                  scholarship={scholarship}
-                />
+                <SaveScholarshipButton scholarship={scholarship} />
               </div>
               <p className="mt-6 text-[12px] leading-6 text-[#747c91]">
                 {scholarship.description}
@@ -270,16 +277,16 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
             {scholarship.eligibility.length ? (
               <ul className="mt-4 space-y-3">
                 {scholarship.eligibility.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2.5 text-[12px] text-[#626a7f]"
-                >
-                  <CheckCircle2
-                    size={15}
-                    className="mt-0.5 shrink-0 text-[#312e81]"
-                  />{" "}
-                  {item}
-                </li>
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[12px] text-[#626a7f]"
+                  >
+                    <CheckCircle2
+                      size={15}
+                      className="mt-0.5 shrink-0 text-[#312e81]"
+                    />{" "}
+                    {item}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -291,54 +298,54 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
 
           {scholarship.benefits.length > 0 && (
             <Surface className="p-5 sm:p-7">
-            <div className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-lg bg-[#fef3c7] text-[#f59e0b]">
-                <Sparkles size={16} />
-              </span>
-              <h2 className="text-[15px] font-bold text-[#0f172a] dark:text-white">
-                What this award includes
-              </h2>
-            </div>
-            <ul className="mt-4 space-y-3">
-              {scholarship.benefits.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2.5 text-[12px] text-[#626a7f]"
-                >
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#6366f1]" />{" "}
-                  {item}
-                </li>
-              ))}
-            </ul>
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-lg bg-[#fef3c7] text-[#f59e0b]">
+                  <Sparkles size={16} />
+                </span>
+                <h2 className="text-[15px] font-bold text-[#0f172a] dark:text-white">
+                  What this award includes
+                </h2>
+              </div>
+              <ul className="mt-4 space-y-3">
+                {scholarship.benefits.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[12px] text-[#626a7f]"
+                  >
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#6366f1]" />{" "}
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </Surface>
           )}
 
           {scholarship.documents.length > 0 && (
             <Surface className="p-5 sm:p-7">
-            <div className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-lg bg-[#f2efff] text-[#312e81]">
-                <FileText size={16} />
-              </span>
-              <h2 className="text-[15px] font-bold text-[#0f172a] dark:text-white">
-                Documents to prepare
-              </h2>
-            </div>
-            <div className="mt-4 space-y-2.5">
-              {scholarship.documents.map((item, index) => (
-                <div
-                  key={item}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-[#ddd6fe] px-3.5 py-3"
-                >
-                  <span className="flex items-center gap-2.5 text-[11px] text-[#636b80]">
-                    <span className="grid size-6 place-items-center rounded-lg bg-[#f5f3ff] text-[9px] font-bold text-[#9399a9]">
-                      {String(index + 1).padStart(2, "0")}
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-lg bg-[#f2efff] text-[#312e81]">
+                  <FileText size={16} />
+                </span>
+                <h2 className="text-[15px] font-bold text-[#0f172a] dark:text-white">
+                  Documents to prepare
+                </h2>
+              </div>
+              <div className="mt-4 space-y-2.5">
+                {scholarship.documents.map((item, index) => (
+                  <div
+                    key={item}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[#ddd6fe] px-3.5 py-3"
+                  >
+                    <span className="flex items-center gap-2.5 text-[11px] text-[#636b80]">
+                      <span className="grid size-6 place-items-center rounded-lg bg-[#f5f3ff] text-[9px] font-bold text-[#9399a9]">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      {item}
                     </span>
-                    {item}
-                  </span>
-                  <Download size={14} className="shrink-0 text-[#b1b6c2]" />
-                </div>
-              ))}
-            </div>
+                    <Download size={14} className="shrink-0 text-[#b1b6c2]" />
+                  </div>
+                ))}
+              </div>
             </Surface>
           )}
         </div>
@@ -408,7 +415,10 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
               </button>
             )}
             {applicationMessage && (
-              <p className="mt-2 text-center text-[10px] text-[#747c91]" role="status">
+              <p
+                className="mt-2 text-center text-[10px] text-[#747c91]"
+                role="status"
+              >
                 {applicationMessage}
               </p>
             )}
@@ -450,6 +460,22 @@ function ScholarshipDetailsContent({ id }: { id: string }) {
               <ArrowUpRight size={12} />
             </a>
           </Surface>
+          {scholarship.scholarshipDocumentUrl && (
+            <Surface className="p-5">
+              <h2 className="flex items-center gap-2 text-[12px] font-bold text-[#0f172a] dark:text-white">
+                <FileText size={16} className="text-[#6366f1]" /> Scholarship
+                PDF
+              </h2>
+              <a
+                href={scholarship.scholarshipDocumentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold text-[#6366f1] hover:underline"
+              >
+                View scholarship document <ArrowUpRight size={12} />
+              </a>
+            </Surface>
+          )}
           <Link
             href={`/eligibility?scholarship_id=${encodeURIComponent(scholarship.id)}`}
             className="flex items-center gap-3 rounded-2xl border border-[#e0e7ff] bg-[#e0e7ff] p-4 transition hover:bg-[#e0e7ff]"

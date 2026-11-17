@@ -3,6 +3,10 @@ import { authenticateRequest, isResponse } from "@/lib/api/auth";
 import { getPagination, databaseError } from "@/lib/api/http";
 import { scholarshipFields } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
+import {
+  addScholarshipDocumentUrls,
+  storageError,
+} from "@/lib/supabase-storage";
 
 export async function GET(request: Request) {
   const auth = await authenticateRequest(request);
@@ -49,17 +53,28 @@ export async function GET(request: Request) {
       values,
     );
     const rows = await pool.query(
-      `SELECT id, ${scholarshipFields.join(", ")},
-         submitted_by IS NOT NULL AND verification_status = 'pending' AS is_community_submitted
-       FROM scholarships WHERE ${where}
+      `SELECT s.id, ${scholarshipFields.map((field) => `s.${field}`).join(", ")},
+         s.submitted_by IS NOT NULL AND s.verification_status = 'pending' AS is_community_submitted,
+         (SELECT d.storage_bucket FROM scholarship_documents d
+          WHERE d.scholarship_id = s.id AND d.storage_path IS NOT NULL
+          ORDER BY d.created_at DESC LIMIT 1) AS document_storage_bucket,
+         (SELECT d.storage_path FROM scholarship_documents d
+          WHERE d.scholarship_id = s.id AND d.storage_path IS NOT NULL
+          ORDER BY d.created_at DESC LIMIT 1) AS document_storage_path
+       FROM scholarships s WHERE ${where}
        ORDER BY application_deadline ASC NULLS LAST, created_at DESC
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, limit, offset],
     );
-    return NextResponse.json({
-      scholarships: rows.rows,
-      pagination: { page, limit, total: countResult.rows[0].total },
-    });
+    try {
+      const scholarships = await addScholarshipDocumentUrls(rows.rows);
+      return NextResponse.json({
+        scholarships,
+        pagination: { page, limit, total: countResult.rows[0].total },
+      });
+    } catch (error) {
+      return storageError("Unable to create scholarship document links.", error);
+    }
   } catch (error) {
     return databaseError("Unable to list scholarships.", error);
   }

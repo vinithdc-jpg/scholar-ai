@@ -8,6 +8,8 @@ import { CustomDatePicker } from "@/components/custom-fields";
 import { auth } from "@/lib/firebase";
 
 type CreatedScholarship = { id: number | string; name: string };
+const MAX_PDF_SIZE = 500 * 1024;
+
 type SubmissionResponse = {
   error?: string;
   scholarship?: CreatedScholarship;
@@ -38,6 +40,10 @@ export default function SubmitScholarshipPage() {
 
       const form = event.currentTarget;
       const values = new FormData(form);
+      const pdf = values.get("pdf");
+      if (pdf instanceof File && pdf.size > MAX_PDF_SIZE) {
+        throw new Error("The PDF must be 500 KB or smaller.");
+      }
       const amount = String(values.get("amount") ?? "").trim();
       const incomeLimit = String(values.get("income_limit") ?? "").trim();
       const body = {
@@ -69,13 +75,18 @@ export default function SubmitScholarshipPage() {
         throw new Error("Enter valid numeric amounts.");
       }
 
+      const submission = new FormData();
+      submission.set("scholarship", JSON.stringify(body));
+      if (pdf instanceof File && pdf.size > 0) {
+        submission.set("pdf", pdf);
+      }
+
       const response = await fetch("/api/scholarship-submissions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${await user.getIdToken()}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: submission,
         cache: "no-store",
       });
       const result = (await response.json()) as SubmissionResponse;
@@ -307,6 +318,18 @@ export default function SubmitScholarshipPage() {
               />
             </label>
           </div>
+
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-semibold text-[#697186]">
+              Scholarship details PDF (optional, max 500 KB)
+            </span>
+            <input
+              name="pdf"
+              type="file"
+              accept=".pdf,application/pdf"
+              className="workspace-input w-full rounded-xl border border-[#ddd6fe] bg-white px-3 py-2.5 text-[12px]"
+            />
+          </label>
 
           <p className="text-[11px] leading-5 text-[#858c9e]">
             Include the organization&apos;s official source. Submissions are

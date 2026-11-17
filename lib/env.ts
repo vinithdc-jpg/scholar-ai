@@ -4,6 +4,10 @@ const optionalValue = z.preprocess(
   (value) => (value === "" ? undefined : value),
   z.string().optional(),
 );
+const optionalUrl = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().url().optional(),
+);
 
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -31,6 +35,10 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_FIREBASE_APP_ID: optionalValue,
   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: optionalValue,
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: optionalValue,
+  NEXT_PUBLIC_SUPABASE_URL: optionalUrl,
+  SUPABASE_URL: optionalUrl,
+  SUPABASE_SECRET_KEY: optionalValue,
+  SUPABASE_SERVICE_ROLE_KEY: optionalValue,
   NEXT_PUBLIC_APP_URL: optionalValue,
 });
 

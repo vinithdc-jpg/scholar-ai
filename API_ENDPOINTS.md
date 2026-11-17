@@ -42,6 +42,7 @@ currently implemented API route.
 | Applications | `DELETE` | `/api/applications/[id]` | Implemented |
 | Documents | `GET` | `/api/documents` | Implemented |
 | Documents | `GET` | `/api/documents/[id]` | Implemented |
+| Documents | `DELETE` | `/api/documents/[id]` | Implemented |
 | AI assistant | `POST` | `/api/ai/chat` | Route present (RAG unavailable) |
 | AI assistant | `GET` | `/api/ai/sessions` | Implemented |
 | AI assistant | `GET` | `/api/ai/sessions/[id]` | Implemented |
@@ -152,8 +153,17 @@ published scholarship. `GET /recommended` uses the signed-in student's profile
 to rank current published scholarships.
 
 `POST /api/scholarship-submissions` lets any signed-in user publish a
-scholarship with an official HTTPS source URL. Submissions appear in the
-catalog immediately and are labeled community-submitted and unverified.
+scholarship with an official HTTPS source URL. Send multipart form data with a
+JSON `scholarship` field and an optional `pdf` file. PDFs must be 500 KB or
+smaller; the server uploads them to the private Supabase Storage bucket and
+stores the object path and file metadata in PostgreSQL. Scholarship responses
+continue to expose `document_url`, which is a short-lived signed URL rather
+than a stored URL. Configure `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and
+the server-only `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`),
+then run the database migrations to configure the bucket. Submissions appear
+in the catalog immediately and are labeled
+community-submitted and unverified. JSON requests without a PDF remain
+supported.
 
 `POST /api/eligibility/check` accepts `{ "scholarship_id": number, "profile"?: object }`.
 If `profile` is omitted, the saved profile is used. It returns matched, failed,
@@ -173,7 +183,9 @@ application. Student ownership is enforced server-side.
 
 `GET /api/documents` lists the authenticated user's own documents.
 `GET /api/documents/[id]` returns a document only when it belongs to the
-authenticated user. Document upload and deletion routes are not available.
+authenticated user and includes a short-lived `file_url` for its stored file.
+`DELETE /api/documents/[id]` deletes the authenticated user's document and
+stored object. All document operations require a Firebase Bearer token.
 
 ### AI
 

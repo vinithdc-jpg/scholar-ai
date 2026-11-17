@@ -12,9 +12,9 @@ type StudentDocument = {
   original_filename: string | null;
   mime_type: string | null;
   file_size: number | null;
+  file_url: string | null;
   page_count: number | null;
   source_url: string | null;
-  cloudinary_secure_url: string | null;
   academic_year: string | null;
   version: number | null;
   verification_status: string;
@@ -115,7 +115,7 @@ export default function ProfileDocuments() {
       ) : documents.length ? (
         <div className="space-y-2">
           {documents.map((document) => {
-            const fileUrl = safeUrl(document.cloudinary_secure_url);
+            const fileUrl = safeUrl(document.file_url);
             const sourceUrl = safeUrl(document.source_url);
             return (
               <Surface key={document.id} className="p-4">

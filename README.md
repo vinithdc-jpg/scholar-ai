@@ -42,6 +42,19 @@ unverified, with an official source link so students can review the information.
 The application has no admin workspace or admin-only scholarship management
 routes.
 
+Optional scholarship PDFs are stored in the private Supabase Storage bucket
+`scholarship-documents`. Configure `SUPABASE_URL` (or
+`NEXT_PUBLIC_SUPABASE_URL`) and the server-only `SUPABASE_SECRET_KEY` in
+`.env.local`. Legacy `SUPABASE_SERVICE_ROLE_KEY` JWTs are also supported. Never
+use a publishable/anon key for server-side storage operations. Run
+`npm run db:migrate` against the Supabase PostgreSQL database
+to provision the private bucket and storage metadata columns. The API uses
+Firebase ID tokens for user authorization and issues short-lived signed URLs
+only to authenticated callers. Before applying migration `0005`, the migration
+runner copies reachable legacy Cloudinary PDFs (up to 500 KB) to Supabase.
+If a legacy file cannot be fetched or validated, migration stops before
+removing its old database reference.
+
 ## Database and environment setup
 
 The server validates `DATABASE_URL` during startup and before opening a PostgreSQL connection. Copy `.env.example` to `.env.local`, configure `DATABASE_URL` and the existing Firebase client/Admin settings, then apply migrations. Secret-bearing values must remain server-only.

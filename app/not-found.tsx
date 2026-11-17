@@ -4,14 +4,14 @@ import { ArrowLeft, Compass, Search } from "lucide-react";
 export default function NotFound() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f5f3ff] px-5 py-10">
-      <div className="w-full max-w-[430px] rounded-[24px] border border-[#ddd6fe] bg-white p-8 text-center shadow-[0_20px_70px_rgba(47,48,100,0.06)]">
+      <div className="w-full max-w-107.5 rounded-3xl border border-[#ddd6fe] bg-white p-8 text-center shadow-[0_20px_70px_rgba(47,48,100,0.06)]">
         <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#e0e7ff] text-[#6366f1]">
           <Search size={20} />
         </span>
         <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6366f1]">
           404 · Page not found
         </p>
-        <h1 className="mt-2 text-[22px] font-extrabold tracking-[-0.05em] text-[#0f172a]">
+        <h1 className="mt-2 text-[22px] font-extrabold tracking-tighter text-[#0f172a]">
           This opportunity has moved.
         </h1>
         <p className="mt-2 text-[11px] leading-5 text-[#858c9e]">

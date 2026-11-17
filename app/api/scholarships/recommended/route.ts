@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { authenticateRequest, isResponse } from "@/lib/api/auth";
 import { databaseError } from "@/lib/api/http";
 import { getDatabasePool } from "@/lib/db";
+import {
+  addScholarshipDocumentUrls,
+  storageError,
+} from "@/lib/supabase-storage";
 
 export async function GET(request: Request) {
   const auth = await authenticateRequest(request);
@@ -23,6 +27,8 @@ export async function GET(request: Request) {
 
     const result = await pool.query(
       `SELECT s.*,
+         d.storage_bucket AS document_storage_bucket,
+         d.storage_path AS document_storage_path,
          (
            CASE WHEN cardinality(s.eligible_states) = 0 OR $1 = ANY(s.eligible_states) THEN 2 ELSE 0 END +
            CASE WHEN cardinality(s.eligible_courses) = 0 OR $2 = ANY(s.eligible_courses) THEN 2 ELSE 0 END +
@@ -30,6 +36,11 @@ export async function GET(request: Request) {
            CASE WHEN s.income_limit IS NULL OR $4 <= s.income_limit THEN 1 ELSE 0 END
          ) AS match_score
        FROM scholarships s
+       LEFT JOIN LATERAL (
+         SELECT storage_bucket, storage_path FROM scholarship_documents
+         WHERE scholarship_id = s.id AND storage_path IS NOT NULL
+         ORDER BY created_at DESC LIMIT 1
+       ) d ON TRUE
        WHERE s.status = 'published'
          AND s.verification_status = 'verified'
          AND (s.application_deadline IS NULL OR s.application_deadline >= CURRENT_DATE)
@@ -42,7 +53,12 @@ export async function GET(request: Request) {
         student.family_income,
       ],
     );
-    return NextResponse.json({ scholarships: result.rows });
+    try {
+      const scholarships = await addScholarshipDocumentUrls(result.rows);
+      return NextResponse.json({ scholarships });
+    } catch (error) {
+      return storageError("Unable to create scholarship document links.", error);
+    }
   } catch (error) {
     return databaseError("Unable to load scholarship recommendations.", error);
   }

@@ -15,6 +15,7 @@ export type Scholarship = {
   documents: string[];
   officialApplicationUrl?: string;
   officialSourceUrl?: string;
+  scholarshipDocumentUrl?: string;
   location?: string;
   isCommunitySubmitted?: boolean;
 };

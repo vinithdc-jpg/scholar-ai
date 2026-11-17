@@ -14,6 +14,7 @@ export type ScholarshipRecord = {
   application_deadline: string | Date | null;
   official_application_url: string | null;
   official_source_url: string | null;
+  document_url: string | null;
   is_community_submitted: boolean;
 };
 
@@ -80,6 +81,7 @@ export function toScholarshipDisplay(record: ScholarshipRecord): Scholarship {
     documents: [],
     officialApplicationUrl: record.official_application_url ?? undefined,
     officialSourceUrl: record.official_source_url ?? undefined,
+    scholarshipDocumentUrl: record.document_url ?? undefined,
     location: eligibleStates.join(", ") || "Not specified",
     isCommunitySubmitted: record.is_community_submitted,
   };

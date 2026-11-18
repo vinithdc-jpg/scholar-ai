@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:ingestion": "tsx scripts/test-scholarship-ingestion.ts",
+    "test:rag": "tsx scripts/test-rag-pipeline.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:verify": "tsx scripts/verify-database.ts"
   },

@@ -188,7 +188,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
   }
 
   return (
-      <div className="workspace-canvas min-h-screen bg-[#f5f3ff] dark:bg-[#10131d]">
+    <div className="workspace-canvas min-h-screen bg-[#f5f3ff] dark:bg-[#10131d]">
       <div
         className={`fixed inset-0 z-40 bg-[#151a2a]/40 transition-opacity md:hidden ${
           mobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -198,11 +198,17 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
       />
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-65 flex-col border-r border-white/10 bg-[#312e81] px-4 pb-5 pt-6 text-white transition-transform duration-300 md:translate-x-0 ${
-          mobileMenuOpen ? "visible translate-x-0" : "-translate-x-full invisible md:visible"
+          mobileMenuOpen
+            ? "visible translate-x-0"
+            : "-translate-x-full invisible md:visible"
         }`}
       >
         <div className="mb-9 flex items-center justify-between px-2">
-          <Link href="/dashboard" className="flex items-center gap-2.5" onClick={closeMenu}>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5"
+            onClick={closeMenu}
+          >
             <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-[#6366f1] to-[#312e81] text-white shadow-md shadow-indigo-200">
               <GraduationCap size={21} strokeWidth={2.2} />
             </span>
@@ -220,19 +226,6 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="mb-6 rounded-xl border border-white/15 bg-white/10 p-3">
-          <div className="mb-1 flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-indigo-100">Profile strength</p>
-            <span className="text-[11px] font-bold text-amber-400">72%</span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full w-[72%] rounded-full bg-linear-to-r from-[#6366f1] to-amber-400" />
-          </div>
-          <Link href="/profile" onClick={closeMenu} className="mt-2 block text-[10px] font-semibold text-indigo-200 hover:underline">
-            Complete your profile <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-
         <nav
           aria-label="Main navigation"
           className="min-h-0 flex-1 space-y-1 overflow-y-auto"
@@ -244,7 +237,11 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             <NavigationLink
               key={item.href}
               item={item}
-              active={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`))}
+              active={
+                pathname === item.href ||
+                (item.href !== "/dashboard" &&
+                  pathname.startsWith(`${item.href}/`))
+              }
               savedCount={savedIds.length}
               onNavigate={closeMenu}
             />
@@ -290,8 +287,15 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             >
               <Menu size={19} />
             </button>
-            <form action="/scholarships" role="search" className="relative hidden w-[min(360px,45vw)] sm:block">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-200" />
+            <form
+              action="/scholarships"
+              role="search"
+              className="relative hidden w-[min(360px,45vw)] sm:block"
+            >
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-200"
+              />
               <input
                 name="q"
                 placeholder="Search scholarships, fields, schools..."
@@ -307,12 +311,18 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={
+                darkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
               className="rounded-xl p-2 text-indigo-100 transition hover:bg-white/10"
             >
               {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <Link href="/notifications" className="relative rounded-xl p-2 text-indigo-100 transition hover:bg-white/10" aria-label="Notifications">
+            <Link
+              href="/notifications"
+              className="relative rounded-xl p-2 text-indigo-100 transition hover:bg-white/10"
+              aria-label="Notifications"
+            >
               <Bell size={18} />
               <span className="absolute right-1.5 top-1.5 size-2 rounded-full border-2 border-[#312e81] bg-[#f59e0b]" />
             </Link>
@@ -329,7 +339,10 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
               <span className="hidden text-[12px] font-semibold text-white sm:block">
                 {accountName || accountEmail || "My account"}
               </span>
-              <ChevronDown size={14} className="hidden text-indigo-200 sm:block" />
+              <ChevronDown
+                size={14}
+                className="hidden text-indigo-200 sm:block"
+              />
             </Link>
           </div>
         </header>
@@ -347,10 +360,20 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
           {children}
           <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-[#ddd6fe] py-5 text-[10px] text-[#a0a6b4]">
             <span>© 2026 ScholarAI. Built for your next big step.</span>
-            <span className="flex gap-4"><Link href="/scholarships" className="hover:text-[#6366f1]">Explore</Link><Link href="/assistant" className="hover:text-[#6366f1]">Help center</Link><Link href="/profile" className="hover:text-[#6366f1]">Privacy</Link></span>
+            <span className="flex gap-4">
+              <Link href="/scholarships" className="hover:text-[#6366f1]">
+                Explore
+              </Link>
+              <Link href="/assistant" className="hover:text-[#6366f1]">
+                Help center
+              </Link>
+              <Link href="/profile" className="hover:text-[#6366f1]">
+                Privacy
+              </Link>
+            </span>
           </footer>
         </main>
       </div>
-      </div>
+    </div>
   );
 }

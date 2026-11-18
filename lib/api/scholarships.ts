@@ -18,6 +18,20 @@ export const scholarshipSchema = z.object({
   academic_year: z.string().max(32).nullable().optional(),
   verification_status: z.enum(["pending", "verified", "rejected"]).optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
+  source_id: z.string().trim().max(255).nullable().optional(),
+  source_name: z.string().trim().max(255).nullable().optional(),
+  source_type: z
+    .enum(["community_submission", "official_source", "pdf_import", "manual_entry"])
+    .optional(),
+});
+
+export const scholarshipIngestionSchema = scholarshipSchema.extend({
+  source_id: z.string().trim().max(255).nullable().optional(),
+  source_name: z.string().trim().max(255).nullable().optional(),
+  source_type: z
+    .enum(["community_submission", "official_source", "pdf_import", "manual_entry"])
+    .default("community_submission")
+    .optional(),
 });
 
 export const scholarshipFields = [

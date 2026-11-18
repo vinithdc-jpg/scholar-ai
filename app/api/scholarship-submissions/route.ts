@@ -7,9 +7,11 @@ import { databaseError, readJson } from "@/lib/api/http";
 import {
   normalizeScholarshipInput,
   scholarshipFields,
-  scholarshipSchema,
+  scholarshipIngestionSchema,
 } from "@/lib/api/scholarships";
 import { getDatabasePool } from "@/lib/db";
+import { createScholarshipChunks } from "@/lib/chunking.service";
+import { normalizeScholarshipText } from "@/lib/text-normalizer";
 import {
   SCHOLARSHIP_DOCUMENTS_BUCKET,
   removeStorageObject,
@@ -35,7 +37,7 @@ const httpsUrl = z
     { message: "Use an HTTPS URL." },
   );
 
-const createSchema = scholarshipSchema
+const createSchema = scholarshipIngestionSchema
   .omit({ status: true, verification_status: true })
   .extend({
     description: z.string().trim().max(5000).default(""),
@@ -51,10 +53,7 @@ const createSchema = scholarshipSchema
       .array(z.string().trim().min(1).max(120))
       .max(25)
       .optional(),
-    benefits: z
-      .array(z.string().trim().min(1).max(500))
-      .max(25)
-      .optional(),
+    benefits: z.array(z.string().trim().min(1).max(500)).max(25).optional(),
     official_application_url: httpsUrl.nullable().optional(),
     official_source_url: httpsUrl,
   });
@@ -69,7 +68,10 @@ async function uploadPdf(file: File) {
     };
   }
 
-  if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) {
+  if (
+    file.type !== "application/pdf" ||
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
     return {
       error: NextResponse.json(
         { error: "Upload a PDF file." },
@@ -93,7 +95,9 @@ async function uploadPdf(file: File) {
     await uploadPdfToStorage(path, file);
     return { path };
   } catch (error) {
-    return { error: storageError("Unable to upload the scholarship PDF.", error) };
+    return {
+      error: storageError("Unable to upload the scholarship PDF.", error),
+    };
   }
 }
 
@@ -146,7 +150,8 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    if (uploadedFile instanceof File && uploadedFile.size > 0) pdf = uploadedFile;
+    if (uploadedFile instanceof File && uploadedFile.size > 0)
+      pdf = uploadedFile;
   } else {
     const parsedJson = await readJson(request, createSchema);
     if (parsedJson.response) return parsedJson.response;
@@ -193,26 +198,78 @@ export async function POST(request: Request) {
       [...values, auth.user.id],
     );
 
-    if (pdf && documentPath) {
+    const scholarshipId = Number(result.rows[0].id);
+    const normalizedText = normalizeScholarshipText({
+      ...parsed.data,
+      academic_year: parsed.data.academic_year ?? null,
+      source_url: parsed.data.official_source_url ?? null,
+    });
+
+    const documentResult = await client.query(
+      `INSERT INTO scholarship_documents (
+         scholarship_id, title, document_type, storage_bucket, storage_path,
+         original_filename, mime_type, file_size, source_url, academic_year,
+         verification_status, processing_status, uploaded_by
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING id`,
+      [
+        scholarshipId,
+        pdf
+          ? `${parsed.data.name} (PDF upload)`
+          : `${parsed.data.name} (text ingestion)`,
+        pdf ? "pdf-upload" : "text-ingestion",
+        SCHOLARSHIP_DOCUMENTS_BUCKET,
+        pdf ? documentPath : null,
+        pdf ? pdf.name : `scholarship-${scholarshipId}.txt`,
+        pdf ? "application/pdf" : "text/plain",
+        pdf ? pdf.size : Buffer.byteLength(normalizedText, "utf8"),
+        parsed.data.official_source_url ?? null,
+        parsed.data.academic_year ?? null,
+        "pending",
+        pdf ? "completed" : "completed",
+        auth.user.id,
+      ],
+    );
+
+    const chunks = createScholarshipChunks({
+      ...parsed.data,
+      scholarship_id: scholarshipId,
+      source_id: `community-submission:${scholarshipId}`,
+      source_name: "community_submission",
+      source_type: "community_submission",
+      source_url: parsed.data.official_source_url ?? null,
+      academic_year: parsed.data.academic_year ?? null,
+      verification_status: "pending",
+    });
+
+    for (const [index, chunk] of chunks.entries()) {
       await client.query(
-        `INSERT INTO scholarship_documents (
-           scholarship_id, title, document_type, storage_bucket, storage_path,
-           original_filename, mime_type, file_size, source_url, academic_year,
-           uploaded_by
-         )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        `INSERT INTO document_chunks (
+           document_id, scholarship_id, chunk_index, content, metadata, page_number
+         ) VALUES ($1, $2, $3, $4, $5, $6)`,
         [
-          result.rows[0].id,
-          parsed.data.name,
-          "Scholarship details",
-          SCHOLARSHIP_DOCUMENTS_BUCKET,
-          documentPath,
-          pdf.name,
-          "application/pdf",
-          pdf.size,
-          parsed.data.official_source_url,
-          parsed.data.academic_year ?? null,
-          auth.user.id,
+          Number(documentResult.rows[0].id),
+          scholarshipId,
+          index,
+          chunk.content,
+          {
+            ...chunk.metadata,
+            chunk_index: chunk.chunk_index,
+            section: chunk.section,
+            section_title: chunk.section_title,
+            source_id: chunk.metadata.source_id,
+            source_name: chunk.metadata.source_name,
+            source_url: chunk.metadata.source_url,
+            academic_year: chunk.metadata.academic_year,
+            verification_status: chunk.metadata.verification_status,
+            source_type: chunk.metadata.source_type,
+            embedding_model: chunk.metadata.embedding_model,
+            embedding_dimensions: chunk.metadata.embedding_dimensions,
+            trusted_retrieval: false,
+            language: "en",
+          },
+          null,
         ],
       );
     }
@@ -225,17 +282,26 @@ export async function POST(request: Request) {
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
-        console.error("Unable to roll back scholarship submission.", rollbackError);
+        console.error(
+          "Unable to roll back scholarship submission.",
+          rollbackError,
+        );
       }
     }
     if (documentPath) {
       try {
         await removeStorageObject(SCHOLARSHIP_DOCUMENTS_BUCKET, documentPath);
       } catch (cleanupError) {
-        console.error("Unable to remove the unlinked scholarship PDF.", cleanupError);
+        console.error(
+          "Unable to remove the unlinked scholarship PDF.",
+          cleanupError,
+        );
       }
     }
-    return databaseError("Unable to publish the scholarship submission.", error);
+    return databaseError(
+      "Unable to publish the scholarship submission.",
+      error,
+    );
   } finally {
     client?.release();
   }

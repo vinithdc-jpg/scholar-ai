@@ -282,17 +282,17 @@ export default function DashboardPage() {
                 <Link
                   key={application.id}
                   href="/applications"
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-[#f5f3ff]"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-[#f5f3ff]"
                 >
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1">
                     <span className="block truncate text-[12px] font-bold text-[#0f172a] dark:text-white">
                       {application.scholarship_name}
                     </span>
-                    <span className="mt-1 block text-[10px] text-[#979eae]">
+                    <span className="mt-1 block truncate text-[10px] text-[#979eae]">
                       {application.provider} · {application.status.replaceAll("_", " ")}
                     </span>
                   </span>
-                  <span className="text-[10px] text-[#82899a]">
+                  <span className="shrink-0 text-right text-[10px] text-[#82899a]">
                     {formatDeadline(application.application_deadline)}
                   </span>
                 </Link>

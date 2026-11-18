@@ -11,11 +11,7 @@ loadEnvConfig(process.cwd());
 const STORAGE_BUCKET = "scholarship-documents";
 const MAX_PDF_SIZE = 500 * 1024;
 
-async function columnExists(
-  client: PoolClient,
-  table: string,
-  column: string,
-) {
+async function columnExists(client: PoolClient, table: string, column: string) {
   const result = await client.query(
     `SELECT EXISTS (
        SELECT 1 FROM information_schema.columns
@@ -111,7 +107,7 @@ async function migrateLegacyStorage(client: import("pg").PoolClient) {
     hasLegacyDocumentUrls
       ? (
           await client.query(
-        `SELECT id, cloudinary_secure_url
+            `SELECT id, cloudinary_secure_url
          FROM scholarship_documents
          WHERE cloudinary_secure_url IS NOT NULL AND storage_path IS NULL`,
           )
@@ -127,7 +123,7 @@ async function migrateLegacyStorage(client: import("pg").PoolClient) {
   }[] = hasScholarshipDocumentUrl
     ? (
         await client.query(
-        `SELECT id, name, document_url, official_source_url,
+          `SELECT id, name, document_url, official_source_url,
                 academic_year, submitted_by
          FROM scholarships WHERE document_url IS NOT NULL`,
         )
@@ -158,22 +154,13 @@ async function migrateLegacyStorage(client: import("pg").PoolClient) {
   const { data: existingBucket, error: bucketLookupError } =
     await storage.getBucket(STORAGE_BUCKET);
   if (bucketLookupError) {
-    const { error } = await storage.createBucket(
-      STORAGE_BUCKET,
-      bucketOptions,
-    );
+    const { error } = await storage.createBucket(STORAGE_BUCKET, bucketOptions);
     if (error) throw error;
   } else if (existingBucket) {
-    const { error } = await storage.updateBucket(
-      STORAGE_BUCKET,
-      bucketOptions,
-    );
+    const { error } = await storage.updateBucket(STORAGE_BUCKET, bucketOptions);
     if (error) throw error;
   } else {
-    const { error } = await storage.createBucket(
-      STORAGE_BUCKET,
-      bucketOptions,
-    );
+    const { error } = await storage.createBucket(STORAGE_BUCKET, bucketOptions);
     if (error) throw error;
   }
 
@@ -202,7 +189,10 @@ async function migrateLegacyStorage(client: import("pg").PoolClient) {
         .from(STORAGE_BUCKET)
         .remove([path]);
       if (cleanupError) {
-        console.error("Unable to clean up an unlinked legacy file.", cleanupError);
+        console.error(
+          "Unable to clean up an unlinked legacy file.",
+          cleanupError,
+        );
       }
       throw error;
     }
@@ -262,14 +252,20 @@ async function migrateLegacyStorage(client: import("pg").PoolClient) {
         try {
           await client.query("ROLLBACK");
         } catch (rollbackError) {
-          console.error("Unable to roll back legacy file metadata.", rollbackError);
+          console.error(
+            "Unable to roll back legacy file metadata.",
+            rollbackError,
+          );
         }
       }
       const { error: cleanupError } = await storage
         .from(STORAGE_BUCKET)
         .remove([path]);
       if (cleanupError) {
-        console.error("Unable to clean up an unlinked legacy file.", cleanupError);
+        console.error(
+          "Unable to clean up an unlinked legacy file.",
+          cleanupError,
+        );
       }
       throw error;
     }

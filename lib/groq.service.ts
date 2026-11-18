@@ -11,19 +11,31 @@ type GroqChatResponse = {
   choices?: Array<{
     message?: {
       content?: string | Array<{ type?: string; text?: string }>;
+      reasoning?: string;
     };
   }>;
 };
 
 function extractMessageContent(payload: GroqChatResponse): string {
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content === "string") return content.trim();
+  const message = payload.choices?.[0]?.message;
+  if (!message) return "";
+
+  const content = message.content;
+  if (typeof content === "string" && content.trim()) return content.trim();
   if (Array.isArray(content)) {
-    return content
+    const joined = content
       .map((part) => (typeof part.text === "string" ? part.text : ""))
       .join("")
       .trim();
+    if (joined) return joined;
   }
+
+  // Some reasoning models (e.g. openai/gpt-oss-120b on Groq) place the actual
+  // response text in `reasoning` while `content` is an empty string.
+  if (typeof message.reasoning === "string" && message.reasoning.trim()) {
+    return message.reasoning.trim();
+  }
+
   return "";
 }
 

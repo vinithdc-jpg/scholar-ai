@@ -342,8 +342,14 @@ async function testLiveProviders() {
       console.log("Query embedding: passed");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (message.includes("(402)") || message.includes("pre-paid credits")) {
-        console.log(`Query embedding: skipped (${message})`);
+      if (
+        message.includes("(402)") ||
+        message.includes("pre-paid credits") ||
+        message.includes("(503)") ||
+        message.includes("circuit breaker") ||
+        message.includes("currently failing")
+      ) {
+        console.log(`Query embedding: skipped (provider transient error — ${message})`);
       } else {
         throw error;
       }

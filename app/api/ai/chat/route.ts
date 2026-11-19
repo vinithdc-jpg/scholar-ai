@@ -36,9 +36,10 @@ export async function POST(request: Request) {
   }
 
   const env = getServerEnv();
+  const requiresEmbeddingApiKey = env.EMBEDDING_PROVIDER !== "local";
   if (
     !env.GROQ_API_KEY ||
-    !env.EMBEDDING_API_KEY ||
+    (requiresEmbeddingApiKey && !env.EMBEDDING_API_KEY) ||
     !env.EMBEDDING_PROVIDER ||
     !env.EMBEDDING_MODEL
   ) {

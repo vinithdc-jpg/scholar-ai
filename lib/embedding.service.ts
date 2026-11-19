@@ -1,15 +1,44 @@
-export const EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-0.6B";
-export const EMBEDDING_DIMENSIONS = 1024;
-export const SUPPORTED_EMBEDDING_PROVIDER = "huggingface";
+import { pipeline } from "@huggingface/transformers";
+
+export const EMBEDDING_MODEL = "Xenova/multilingual-e5-small";
+export const EMBEDDING_DIMENSIONS = 384;
+export const SUPPORTED_EMBEDDING_PROVIDERS = ["local", "huggingface"] as const;
+export type SupportedEmbeddingProvider = (typeof SUPPORTED_EMBEDDING_PROVIDERS)[number];
+export const SUPPORTED_EMBEDDING_PROVIDER = "local";
 
 export type EmbeddingResponse = number[];
 
 export type EmbeddingRequestOptions = {
-  apiKey: string;
+  apiKey?: string;
   model?: string;
   dimensions?: number;
   provider?: string;
+  type?: "query" | "passage";
 };
+
+type FeatureExtractor = (
+  text: string,
+  options?: { pooling?: string; normalize?: boolean },
+) => Promise<{ data: Float32Array | number[] }>;
+
+let localExtractor: FeatureExtractor | null = null;
+let localLoadingPromise: Promise<FeatureExtractor> | null = null;
+
+async function getLocalExtractor(modelName: string): Promise<FeatureExtractor> {
+  if (localExtractor) return localExtractor;
+
+  if (!localLoadingPromise) {
+    localLoadingPromise = pipeline("feature-extraction", modelName) as unknown as Promise<FeatureExtractor>;
+  }
+
+  try {
+    localExtractor = await localLoadingPromise;
+    return localExtractor;
+  } catch (error) {
+    localLoadingPromise = null;
+    throw error;
+  }
+}
 
 function meanPool(rows: number[][]): number[] {
   const dimensions = rows[0].length;
@@ -22,7 +51,7 @@ function meanPool(rows: number[][]): number[] {
   return pooled.map((value) => value / rows.length);
 }
 
-function parseEmbeddingResponse(payload: unknown): number[] {
+function parseRemoteEmbeddingResponse(payload: unknown): number[] {
   if (Array.isArray(payload) && payload.every((value) => typeof value === "number")) {
     return payload as number[];
   }
@@ -55,26 +84,23 @@ export function assertSupportedEmbeddingProvider(provider: string | undefined) {
   if (!configured) {
     throw new Error("An embedding provider is not configured.");
   }
-  if (configured !== SUPPORTED_EMBEDDING_PROVIDER) {
+  if (!SUPPORTED_EMBEDDING_PROVIDERS.includes(configured as SupportedEmbeddingProvider)) {
     throw new Error(
-      `Unsupported embedding provider "${provider}". This application uses ${SUPPORTED_EMBEDDING_PROVIDER}.`,
+      `Unsupported embedding provider "${provider}". Supported providers: ${SUPPORTED_EMBEDDING_PROVIDERS.join(", ")}.`,
     );
   }
 }
 
-export async function createEmbedding(
-  text: string,
+async function createRemoteHuggingFaceEmbedding(
+  cleanText: string,
   options: EmbeddingRequestOptions,
-): Promise<EmbeddingResponse> {
-  const cleanText = text.trim();
-  if (!cleanText) {
-    throw new Error("Cannot create an embedding from empty text.");
+  expectedDimensions: number,
+): Promise<number[]> {
+  if (!options.apiKey?.trim()) {
+    throw new Error("An API key is required for the huggingface remote embedding provider.");
   }
 
-  assertSupportedEmbeddingProvider(options.provider ?? SUPPORTED_EMBEDDING_PROVIDER);
-
   const model = options.model?.trim() || EMBEDDING_MODEL;
-  const expectedDimensions = options.dimensions ?? EMBEDDING_DIMENSIONS;
   const response = await fetch(
     `https://router.huggingface.co/hf-inference/models/${model}/pipeline/feature-extraction`,
     {
@@ -97,7 +123,7 @@ export async function createEmbedding(
     );
   }
 
-  const embedding = parseEmbeddingResponse(await response.json());
+  const embedding = parseRemoteEmbeddingResponse(await response.json());
   if (embedding.length !== expectedDimensions) {
     throw new Error(
       `Expected ${expectedDimensions} embedding dimensions, received ${embedding.length}.`,
@@ -107,9 +133,60 @@ export async function createEmbedding(
   return embedding;
 }
 
+async function createLocalEmbedding(
+  cleanText: string,
+  modelName: string,
+  expectedDimensions: number,
+  type: "query" | "passage" = "passage",
+): Promise<number[]> {
+  const extractor = await getLocalExtractor(modelName);
+  const formattedText =
+    modelName.toLowerCase().includes("e5") &&
+    !cleanText.startsWith("query: ") &&
+    !cleanText.startsWith("passage: ")
+      ? `${type}: ${cleanText}`
+      : cleanText;
+
+  const output = await extractor(formattedText, {
+    pooling: "mean",
+    normalize: true,
+  });
+
+  const embedding = Array.from(output.data);
+  if (embedding.length !== expectedDimensions) {
+    throw new Error(
+      `Expected ${expectedDimensions} embedding dimensions, received ${embedding.length}.`,
+    );
+  }
+
+  return embedding;
+}
+
+export async function createEmbedding(
+  text: string,
+  options: EmbeddingRequestOptions = {},
+): Promise<EmbeddingResponse> {
+  const cleanText = text.trim();
+  if (!cleanText) {
+    throw new Error("Cannot create an embedding from empty text.");
+  }
+
+  const provider = options.provider?.trim().toLowerCase() || SUPPORTED_EMBEDDING_PROVIDER;
+  assertSupportedEmbeddingProvider(provider);
+
+  const model = options.model?.trim() || EMBEDDING_MODEL;
+  const expectedDimensions = options.dimensions ?? EMBEDDING_DIMENSIONS;
+
+  if (provider === "local") {
+    return createLocalEmbedding(cleanText, model, expectedDimensions, options.type ?? "passage");
+  }
+
+  return createRemoteHuggingFaceEmbedding(cleanText, options, expectedDimensions);
+}
+
 export async function createQueryEmbedding(
   text: string,
-  options: EmbeddingRequestOptions,
+  options: EmbeddingRequestOptions = {},
 ): Promise<EmbeddingResponse> {
-  return createEmbedding(text, options);
+  return createEmbedding(text, { ...options, type: "query" });
 }

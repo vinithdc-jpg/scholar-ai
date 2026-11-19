@@ -58,8 +58,8 @@ assert.ok(
   chunks.some((chunk) => chunk.metadata.section === "application_deadline"),
   "Application deadline chunk must be present.",
 );
-assert.equal(chunks[0].metadata.embedding_dimensions, 1024);
-assert.equal(chunks[0].metadata.embedding_model, "Qwen/Qwen3-Embedding-0.6B");
+assert.equal(chunks[0].metadata.embedding_dimensions, 384);
+assert.equal(chunks[0].metadata.embedding_model, "Xenova/multilingual-e5-small");
 assert.equal(chunks[0].metadata.trusted_retrieval, false);
 
 console.log(`Normalized scholarship text length: ${normalized.length} characters`);

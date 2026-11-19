@@ -309,7 +309,11 @@ async function testFullChatFlow(pool: Pool) {
 
 async function testLiveProviders() {
   const env = getServerEnv();
-  if (env.EMBEDDING_API_KEY && env.EMBEDDING_MODEL && env.EMBEDDING_PROVIDER) {
+  if (
+    (env.EMBEDDING_PROVIDER === "local" || env.EMBEDDING_API_KEY) &&
+    env.EMBEDDING_MODEL &&
+    env.EMBEDDING_PROVIDER
+  ) {
     try {
       const relatedA = await createQueryEmbedding(
         "National Merit Award deadline 15 January 2027",

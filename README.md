@@ -59,7 +59,7 @@ removing its old database reference.
 
 The server validates `DATABASE_URL` during startup and before opening a PostgreSQL connection. Copy `.env.example` to `.env.local`, configure `DATABASE_URL` and the existing Firebase client/Admin settings, then apply migrations. Secret-bearing values must remain server-only.
 
-The initial migration creates the application tables and enables `vector`. Scholarship chunks use `Qwen/Qwen3-Embedding-0.6B` with 1024-dimensional embeddings. Configure `EMBEDDING_PROVIDER=huggingface`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSIONS=1024` to enable embedding generation.
+The initial migration creates the application tables and enables `vector`. Scholarship chunks use `Xenova/multilingual-e5-small` with 384-dimensional embeddings. Configure `EMBEDDING_PROVIDER=local` (or `huggingface`), `EMBEDDING_MODEL=Xenova/multilingual-e5-small`, and `EMBEDDING_DIMENSIONS=384` to enable embedding generation.
 
 The application currently uses the root `app/` App Router structure. Feature-specific folders will be added as each implementation phase needs them rather than scaffolding empty directories.
 

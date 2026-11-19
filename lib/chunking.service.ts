@@ -1,4 +1,7 @@
-import { normalizeScholarshipText, type ScholarshipTextInput } from "@/lib/text-normalizer";
+import {
+  normalizeScholarshipText,
+  type ScholarshipTextInput,
+} from "@/lib/text-normalizer";
 import { EMBEDDING_DIMENSIONS, EMBEDDING_MODEL } from "@/lib/embedding.service";
 
 export const SCHOLARSHIP_CHUNK_SECTIONS = [
@@ -11,7 +14,8 @@ export const SCHOLARSHIP_CHUNK_SECTIONS = [
   "application_deadline",
 ] as const;
 
-export type ScholarshipChunkSection = (typeof SCHOLARSHIP_CHUNK_SECTIONS)[number];
+export type ScholarshipChunkSection =
+  (typeof SCHOLARSHIP_CHUNK_SECTIONS)[number];
 
 export type ScholarshipChunkMetadata = {
   scholarship_id: number | string | null;
@@ -20,7 +24,11 @@ export type ScholarshipChunkMetadata = {
   source_url: string | null;
   academic_year: string | null;
   verification_status: "pending" | "verified" | "rejected";
-  source_type: "community_submission" | "official_source" | "pdf_import" | "manual_entry";
+  source_type:
+    | "community_submission"
+    | "official_source"
+    | "pdf_import"
+    | "manual_entry";
   section: ScholarshipChunkSection;
   section_title: string;
   embedding_model: string;
@@ -49,7 +57,12 @@ export type ScholarshipChunkInput = ScholarshipTextInput & {
 };
 
 function sanitizeText(value: string | null | undefined) {
-  return value?.replace(/\s+/g, " ").replace(/[\u0000-\u001F\u007F]+/g, "").trim() ?? "";
+  return (
+    value
+      ?.replace(/\s+/g, " ")
+      .replace(/[\u0000-\u001F\u007F]+/g, "")
+      .trim() ?? ""
+  );
 }
 
 function buildSentence(label: string, value: string | null | undefined) {
@@ -57,16 +70,28 @@ function buildSentence(label: string, value: string | null | undefined) {
   return clean ? `${label}: ${clean}.` : "";
 }
 
-function buildChunkList(title: string, values: Array<string | null | undefined>) {
-  const cleanValues = values.map((value) => sanitizeText(value)).filter(Boolean);
+function buildChunkList(
+  title: string,
+  values: Array<string | null | undefined>,
+) {
+  const cleanValues = values
+    .map((value) => sanitizeText(value))
+    .filter(Boolean);
   return cleanValues.length ? `${title}: ${cleanValues.join(", ")}.` : "";
 }
 
-export function createScholarshipChunks(input: ScholarshipChunkInput): ScholarshipChunk[] {
+export function createScholarshipChunks(
+  input: ScholarshipChunkInput,
+): ScholarshipChunk[] {
   const normalizedText = normalizeScholarshipText(input);
-  const metadataBase: Omit<ScholarshipChunkMetadata, "section" | "section_title"> = {
+  const metadataBase: Omit<
+    ScholarshipChunkMetadata,
+    "section" | "section_title"
+  > = {
     scholarship_id: input.scholarship_id ?? null,
-    source_id: input.source_id ?? `scholarship:${String(input.scholarship_id ?? "draft")}`,
+    source_id:
+      input.source_id ??
+      `scholarship:${String(input.scholarship_id ?? "draft")}`,
     source_name: input.source_name ?? "community_submission",
     source_url: input.source_url ?? null,
     academic_year: input.academic_year ?? null,
@@ -88,7 +113,10 @@ export function createScholarshipChunks(input: ScholarshipChunkInput): Scholarsh
       title: "Scholarship overview",
       content: [
         normalizedText,
-        buildSentence("Official source", input.official_source_url ?? input.source_url),
+        buildSentence(
+          "Official source",
+          input.official_source_url ?? input.source_url,
+        ),
       ]
         .filter(Boolean)
         .join(" "),
@@ -97,7 +125,10 @@ export function createScholarshipChunks(input: ScholarshipChunkInput): Scholarsh
       key: "eligibility_criteria",
       title: "Eligibility criteria",
       content: [
-        buildSentence("Eligible education levels", input.education_levels?.join(", ")),
+        buildSentence(
+          "Eligible education levels",
+          input.education_levels?.join(", "),
+        ),
         buildSentence("Eligible courses", input.eligible_courses?.join(", ")),
         buildSentence("Eligible states", input.eligible_states?.join(", ")),
       ]
@@ -121,8 +152,14 @@ export function createScholarshipChunks(input: ScholarshipChunkInput): Scholarsh
       key: "income_requirements",
       title: "Income requirements",
       content: [
-        buildSentence("Income limit", input.income_limit ? `$${input.income_limit}` : null),
-        buildSentence("Application threshold", input.income_limit ? `${input.income_limit} USD` : null),
+        buildSentence(
+          "Income limit",
+          input.income_limit ? `$${input.income_limit}` : null,
+        ),
+        buildSentence(
+          "Application threshold",
+          input.income_limit ? `${input.income_limit} USD` : null,
+        ),
       ]
         .filter(Boolean)
         .join(" "),
@@ -170,7 +207,9 @@ export function createScholarshipChunks(input: ScholarshipChunkInput): Scholarsh
   }
 
   if (chunks.length === 0) {
-    throw new Error("No valid scholarship chunks were generated from the provided scholarship data.");
+    throw new Error(
+      "No valid scholarship chunks were generated from the provided scholarship data.",
+    );
   }
 
   return chunks;

@@ -203,7 +203,10 @@ export async function answerGroundedChat(
     try {
       await client.query("ROLLBACK");
     } catch (rollbackError) {
-      console.error("Unable to roll back grounded chat persistence.", rollbackError);
+      console.error(
+        "Unable to roll back grounded chat persistence.",
+        rollbackError,
+      );
     }
     throw error;
   } finally {
